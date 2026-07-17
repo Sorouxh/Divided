@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Soroush — UI and product designer, also known as dividedsign." />
+    <title>Soroush — DividedSign</title>
+    <link rel="stylesheet" href="https://unpkg.com/lenis@1.3.25/dist/lenis.css" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="https://unpkg.com/lenis@1.3.25/dist/lenis.min.js"></script>
+    <script>
+      window.lenis = new Lenis({
+        autoRaf: true,
+        autoToggle: true,
+        anchors: true,
+        allowNestedScroll: true,
+        naiveDimensions: true,
+        stopInertiaOnNavigate: true,
+      });
+    </script>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

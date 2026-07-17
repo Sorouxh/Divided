@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Magnetic vector field</title>
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; display:grid; place-items:center; background:#fff; }
+  canvas { display:block; width:592px; height:227px; cursor:default; }
+</style>
+<canvas aria-hidden="true"></canvas>
+<script>
+(() => {
+  const canvas = document.querySelector('canvas'), ctx = canvas.getContext('2d');
+  const width = 592, height = 227, ratio = Math.min(devicePixelRatio || 1, 2);
+  canvas.width = width * ratio; canvas.height = height * ratio;
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  const columns = 24, spacing = width / columns, dashLength = 10;
+  const idle = [207, 216, 224], active = [50, 64, 79];
+  let pointer = { x:width/2, y:height/2 }, orb = { ...pointer }, inside = false, strength = 0;
+  const mix = amount => `rgb(${idle.map((v,i) => Math.round(v + (active[i] - v) * amount)).join(',')})`;
+
+  canvas.addEventListener('pointermove', event => {
+    const rect = canvas.getBoundingClientRect();
+    pointer.x = (event.clientX - rect.left) * width / rect.width;
+    pointer.y = (event.clientY - rect.top) * height / rect.height;
+    inside = true;
+  });
+  canvas.addEventListener('pointerleave', () => { inside = false; });
+
+  function frame() {
+    const ease = matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : .12;
+    orb.x += (pointer.x - orb.x) * ease;
+    orb.y += (pointer.y - orb.y) * ease;
+    strength += ((inside ? 1 : 0) - strength) * ease;
+    ctx.clearRect(0, 0, width, height);
+    ctx.lineWidth = 1; ctx.lineCap = 'round';
+    for (let col = 0; col < columns; col++) {
+      const x = col * spacing + spacing / 2;
+      for (let y = spacing / 2; y < height; y += spacing) {
+        const dx = orb.x - x, dy = orb.y - y, distanceSq = dx * dx + dy * dy;
+        // One broad Gaussian means the lighting has no hard edge or rectangle.
+        const light = Math.exp(-distanceSq / (2 * 92 * 92)) * strength;
+        ctx.strokeStyle = mix(light);
+        ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(dy, dx));
+        ctx.beginPath(); ctx.moveTo(-dashLength / 2, 0); ctx.lineTo(dashLength / 2, 0); ctx.stroke();
+        ctx.restore();
+      }
+    }
+    if (strength > .01) {
+      ctx.globalAlpha = strength;
+      ctx.fillStyle = '#32404F'; ctx.beginPath(); ctx.arc(orb.x, orb.y, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+</script>
+</html>

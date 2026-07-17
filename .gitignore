@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.pnpm-store/
+.fig-inspect/
+*.fig
+Dividedsign Website - *.png
+.DS_Store
+Thumbs.db

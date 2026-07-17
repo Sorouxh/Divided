@@ -1,0 +1,21 @@
+{
+  "name": "dividedsign-portfolio",
+  "private": true,
+  "version": "1.0.0",
+  "packageManager": "pnpm@11.9.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@gsap/react": "^2.1.2",
+    "@vitejs/plugin-react": "latest",
+    "gsap": "^3.15.0",
+    "motion": "^12.42.2",
+    "react": "latest",
+    "react-dom": "latest",
+    "vite": "latest"
+  }
+}
