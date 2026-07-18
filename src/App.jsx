@@ -1,15 +1,14 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import SplitText from './components/SplitText.jsx';
 import ScrollReveal from './components/ScrollReveal.jsx';
 import AnimatedContent from './components/AnimatedContent.jsx';
+import FadeContent from './components/FadeContent.jsx';
+import GradualBlur from './components/GradualBlur.jsx';
 import ShinyText from './components/ShinyText.jsx';
+import DecryptedText from './components/DecryptedText.jsx';
 
-import avatar from '../assets/avatar.webp';
-import bankingPreview from '../assets/Images/Image.png';
-import profilePreview from '../assets/Images/Image-1.png';
-import healthPreview from '../assets/Images/Image-2.png';
-import sportsPreview from '../assets/Images/Image-3.png';
-import cardsPreview from '../assets/Images/Image-4.png';
+import avatar from '../assets/Images/avatar.webp';
 import blockLogo from '../assets/Logos/Work 1/Icon.png';
 import moqderateLogo from '../assets/Logos/Work 2/Icon Wrapper.png';
 import piqoLogo from '../assets/Logos/Work 3/Icon Wrapper.png';
@@ -20,6 +19,22 @@ import pcImage from '../assets/Images/pc.png';
 
 const services = ['Landing Page', 'Mobile Apps', 'Decks', 'Web & Mobile UI', 'Visual Design', '+More'];
 const projectTags = ['Landing Page', 'Mobile Apps', 'Decks'];
+const carouselImages = import.meta.glob('../assets/Images/Image*', { eager: true, query: '?url', import: 'default' });
+const previews = Object.entries(carouselImages)
+  .sort(([first], [second]) => first.localeCompare(second, undefined, { numeric: true }))
+  .map(([path, src]) => ({
+    src,
+    alt: path.split('/').pop().replace(/^Image-?/, 'Design preview ').replace(/\.[^.]+$/, ''),
+  }));
+const loopingPreviews = [...previews, ...previews, ...previews];
+
+function getSystemDate() {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric', weekday: 'long',
+  }).formatToParts(new Date());
+  const value = (type) => parts.find((part) => part.type === type)?.value || '';
+  return `${value('day')} ${value('month')} ${value('year')}, ${value('weekday')}`;
+}
 
 function ConstructionBand({ className = 'construction-band' }) {
   return <div className={className} aria-hidden="true"><i /><i /></div>;
@@ -27,8 +42,24 @@ function ConstructionBand({ className = 'construction-band' }) {
 
 function FadeTitle({ children, className = '' }) {
   return (
-    <AnimatedContent className="title-reveal" distance={36} direction="horizontal" duration={0.85} threshold={0.14}>
+    <FadeContent
+      className="title-reveal"
+      blur
+      duration={1000}
+      ease="power2.out"
+      initialOpacity={0}
+      threshold={0.2}
+      delay={0.3}
+    >
       <h2 className={className}>{children}</h2>
+    </FadeContent>
+  );
+}
+
+function DescriptionEntrance({ children, className = '' }) {
+  return (
+    <AnimatedContent className={`description-motion ${className}`.trim()} distance={18} direction="vertical" duration={0.7} threshold={0.05} delay={0.18}>
+      {children}
     </AnimatedContent>
   );
 }
@@ -49,11 +80,13 @@ function Hero() {
           threshold={0.1}
           rootMargin="0px"
         >
-          Hey, I’m Soroush<br />Also known as <ShinyText text="dividedsign." yoyo pauseOnHover />
+          Hey, I’m Soroush<br />Also <span className="headline-known">known</span> as <ShinyText text="dividedsign." shineColor="#BBC1C6" yoyo pauseOnHover />
         </SplitText>
-        <AnimatedContent className="hero-description-motion" distance={18} direction="vertical" duration={0.7} threshold={0.05} delay={0.18}>
+        <DescriptionEntrance className="hero-description-motion">
           <ScrollReveal className="hero-description">UI/product designer, built on craft and intention, where function quietly becomes beautiful.</ScrollReveal>
-        </AnimatedContent>
+        </DescriptionEntrance>
+        <i className="hero-guide-plus hero-guide-plus-left" aria-hidden="true" />
+        <i className="hero-guide-plus hero-guide-plus-right" aria-hidden="true" />
       </section>
       <section className="deliver section-pad">
         <FadeTitle>What I deliver</FadeTitle>
@@ -202,9 +235,13 @@ function MagneticField() {
 function Feel() {
   return (
     <section className="feel section-pad">
+      <i className="feel-guide-square" aria-hidden="true" />
       <FadeTitle>How I Feel.</FadeTitle>
+      <DescriptionEntrance>
       <ScrollReveal className="feel-intro">Design should feel inevitable, like it couldn’t have existed any other way. Every decision has a reason, and every reason serves the person using it. That’s the standard I hold myself to on every project.</ScrollReveal>
-      <MagneticField />
+      </DescriptionEntrance>
+      <DescriptionEntrance><MagneticField /></DescriptionEntrance>
+      <DescriptionEntrance>
       <ScrollReveal
         tag="div"
         className="feel-copy"
@@ -213,37 +250,137 @@ function Feel() {
           'Interfere goes beyond logs, metrics, and traces. It finds the root cause and explains what’s broken, why, and who it impacts.',
         ]}
       />
+      </DescriptionEntrance>
+      <div className="feel-bottom-guide" aria-hidden="true" />
     </section>
   );
 }
-
-const previews = [
-  [bankingPreview, 'Mobile banking product interface'],
-  [cardsPreview, 'Mindfulness cards product interface'],
-  [healthPreview, 'HelliHealth website on a laptop'],
-  [sportsPreview, 'Sports information product interface'],
-  [profilePreview, 'Profile selection mobile interface'],
-];
 
 function Showcase() {
+  const viewportRef = useRef(null);
+  const dragRef = useRef({ active: false, startX: 0, startScroll: 0, lastX: 0, lastTime: 0, velocity: 0, moved: false, frame: 0 });
+  const [activePreview, setActivePreview] = useState(null);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return undefined;
+    const getSetWidth = () => viewport.scrollWidth / 3;
+    const startInMiddle = () => { viewport.scrollLeft = getSetWidth(); };
+    const wrap = () => {
+      const setWidth = getSetWidth();
+      if (!setWidth) return;
+      if (viewport.scrollLeft < setWidth * 0.25) viewport.scrollLeft += setWidth;
+      if (viewport.scrollLeft > setWidth * 1.75) viewport.scrollLeft -= setWidth;
+    };
+    startInMiddle();
+    viewport.addEventListener('scroll', wrap, { passive: true });
+    const resizeObserver = new ResizeObserver(startInMiddle);
+    resizeObserver.observe(viewport);
+    return () => {
+      viewport.removeEventListener('scroll', wrap);
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!activePreview) return undefined;
+    const onKeyDown = (event) => { if (event.key === 'Escape') setActivePreview(null); };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [activePreview]);
+
+  const startDrag = (event) => {
+    const viewport = viewportRef.current;
+    const drag = dragRef.current;
+    cancelAnimationFrame(drag.frame);
+    drag.active = true;
+    drag.moved = false;
+    drag.startX = drag.lastX = event.clientX;
+    drag.startScroll = viewport.scrollLeft;
+    drag.lastTime = performance.now();
+    drag.velocity = 0;
+    viewport.setPointerCapture(event.pointerId);
+  };
+  const moveDrag = (event) => {
+    const viewport = viewportRef.current;
+    const drag = dragRef.current;
+    if (!drag.active) return;
+    const now = performance.now();
+    const delta = event.clientX - drag.startX;
+    drag.moved ||= Math.abs(delta) > 5;
+    viewport.scrollLeft = drag.startScroll - delta;
+    drag.velocity = (drag.lastX - event.clientX) / Math.max(now - drag.lastTime, 1) * 16;
+    drag.lastX = event.clientX;
+    drag.lastTime = now;
+  };
+  const endDrag = (event) => {
+    const viewport = viewportRef.current;
+    const drag = dragRef.current;
+    if (!drag.active) return;
+    drag.active = false;
+    viewport.releasePointerCapture?.(event.pointerId);
+    const glide = () => {
+      drag.velocity *= 0.93;
+      if (Math.abs(drag.velocity) < 0.15) return;
+      viewport.scrollLeft += drag.velocity;
+      drag.frame = requestAnimationFrame(glide);
+    };
+    drag.frame = requestAnimationFrame(glide);
+  };
+
   return (
-    <section className="showcase" aria-label="Product design previews">
+    <section
+      className="showcase"
+      ref={viewportRef}
+      aria-label="Product design previews"
+      onPointerDown={startDrag}
+      onPointerMove={moveDrag}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
+    >
       <div className="showcase-track">
-        {previews.map(([src, alt]) => <figure key={src}><img src={src} alt={alt} /></figure>)}
+        {loopingPreviews.map(({ src, alt }, index) => (
+          <figure key={`${src}-${index}`}>
+            <button type="button" onClick={() => !dragRef.current.moved && setActivePreview({ src, alt })} aria-label={`Open ${alt}`}>
+              <img src={src} alt={alt} draggable="false" />
+            </button>
+          </figure>
+        ))}
       </div>
+      {activePreview && createPortal((
+        <div className="preview-modal" role="dialog" aria-modal="true" aria-label={activePreview.alt} onClick={() => setActivePreview(null)}>
+          <button className="preview-close" type="button" aria-label="Close image preview" onClick={() => setActivePreview(null)}>×</button>
+          <img src={activePreview.src} alt={activePreview.alt} onClick={(event) => event.stopPropagation()} />
+        </div>
+      ), document.body)}
     </section>
   );
 }
 
-function WorkCard({ logo, logoAlt, title, description, cover, coverAlt, coverClass }) {
+function WorkCard({ blurId, onCoverVisibility, logo, logoAlt, title, description, cover, coverAlt, coverClass }) {
+  const coverRef = useRef(null);
+
+  useEffect(() => {
+    const coverElement = coverRef.current;
+    if (!coverElement) return undefined;
+    const observer = new IntersectionObserver(([entry]) => {
+      onCoverVisibility(blurId, entry.isIntersecting);
+    }, { threshold: 0 });
+    observer.observe(coverElement);
+    return () => {
+      observer.disconnect();
+      onCoverVisibility(blurId, false);
+    };
+  }, [blurId, onCoverVisibility]);
+
   return (
     <article className="work-card">
-      <img className="work-logo" src={logo} alt={logoAlt} />
+      <DescriptionEntrance className="work-logo-motion"><img className="work-logo" src={logo} alt={logoAlt} /></DescriptionEntrance>
       <div className="work-heading">
-        <h3>{title}</h3>
-        <ScrollReveal className="project-description">{description}</ScrollReveal>
+        <DescriptionEntrance className="work-title-motion"><h3>{title}</h3></DescriptionEntrance>
+        <DescriptionEntrance><p className="project-description">{description}</p></DescriptionEntrance>
       </div>
-      <div className={`work-cover ${coverClass}`}>
+      <div className={`work-cover ${coverClass}`} ref={coverRef}>
         <img src={cover} alt={coverAlt} />
       </div>
       <div className="work-tags" aria-label="Project disciplines">
@@ -254,15 +391,58 @@ function WorkCard({ logo, logoAlt, title, description, cover, coverAlt, coverCla
 }
 
 function SelectedWorks() {
+  const [activeCover, setActiveCover] = useState(null);
+  const scrollYRef = useRef(typeof window === 'undefined' ? 0 : window.scrollY);
+  const scrollingDownRef = useRef(false);
+  const visibleCoversRef = useRef(new Set());
+
+  useEffect(() => {
+    const onScroll = () => {
+      const nextY = window.scrollY;
+      scrollingDownRef.current = nextY > scrollYRef.current;
+      scrollYRef.current = nextY;
+      if (scrollingDownRef.current) {
+        const visibleCovers = [...visibleCoversRef.current];
+        if (visibleCovers.length) setActiveCover(visibleCovers[visibleCovers.length - 1]);
+      } else {
+        setActiveCover(null);
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const handleCoverVisibility = useCallback((coverId, visible) => {
+    if (visible) visibleCoversRef.current.add(coverId);
+    else visibleCoversRef.current.delete(coverId);
+    setActiveCover((current) => (visible && scrollingDownRef.current ? coverId : current === coverId ? null : current));
+  }, []);
+
   return (
     <section className="works">
       <ConstructionBand className="works-band" />
       <div className="works-inner">
         <FadeTitle className="works-title">Selected Works</FadeTitle>
-        <WorkCard logo={blockLogo} logoAlt="O’Block logo" title="O’Block: Minimal Block Game" description="Starting in January 2024, I took on a daily challenge inspired by the Twitter community." cover={blockCover} coverAlt="2954 minimal block game interface" coverClass="cover-block" />
-        <WorkCard logo={moqderateLogo} logoAlt="Moqderate logo" title="Moqderate" description="A calm moderation workspace built to turn noisy community signals into clear decisions." cover={moqderateCover} coverAlt="Moqderate content workspace interface" coverClass="cover-moqderate" />
-        <WorkCard logo={piqoLogo} logoAlt="Piqo Design logo" title="Piqo Design: Digital product design" description="Designed the dashboard and chatbot experience for an AI mental health assistant. Built in Lovable." cover={piqoCover} coverAlt="Digital wallet product interface" coverClass="cover-piqo" />
+        <WorkCard blurId="block" onCoverVisibility={handleCoverVisibility} logo={blockLogo} logoAlt="O’Block logo" title="O’Block: Minimal Block Game" description="Starting in January 2024, I took on a daily challenge inspired by the Twitter community." cover={blockCover} coverAlt="2954 minimal block game interface" coverClass="cover-block" />
+        <WorkCard blurId="moqderate" onCoverVisibility={handleCoverVisibility} logo={moqderateLogo} logoAlt="Moqderate logo" title="Moqderate" description="A calm moderation workspace built to turn noisy community signals into clear decisions." cover={moqderateCover} coverAlt="Moqderate content workspace interface" coverClass="cover-moqderate" />
+        <WorkCard blurId="piqo" onCoverVisibility={handleCoverVisibility} logo={piqoLogo} logoAlt="Piqo Design logo" title="Piqo Design: Digital product design" description="Designed the dashboard and chatbot experience for an AI mental health assistant." cover={piqoCover} coverAlt="Digital wallet product interface" coverClass="cover-piqo" />
       </div>
+      {createPortal(
+        <GradualBlur
+          target="page"
+          position="bottom"
+          height="6rem"
+          strength={2}
+          divCount={5}
+          curve="bezier"
+          exponential
+          opacity={0.9}
+          zIndex={20}
+          className="project-viewport-blur"
+          style={{ opacity: activeCover ? 1 : 0 }}
+        />,
+        document.body,
+      )}
     </section>
   );
 }
@@ -440,6 +620,7 @@ function Thinking() {
     <section className="thinking section-pad">
       <div className="thinking-block">
         <FadeTitle>How I think</FadeTitle>
+        <DescriptionEntrance>
         <ScrollReveal
           tag="div"
           className="description-copy"
@@ -448,10 +629,12 @@ function Thinking() {
             'I collaborate closely, prototype early, and care about the details most people never consciously notice, but always feel. It’s rarely the big decisions that make a product feel right, it’s the small ones, repeated consistently, that add up to something people trust.',
           ]}
         />
+        </DescriptionEntrance>
         <div className="motion-card"><VerticalLines /></div>
       </div>
       <div className="thinking-block quality-block">
         <FadeTitle>Why is quality so rare?</FadeTitle>
+        <DescriptionEntrance>
         <ScrollReveal
           tag="div"
           className="description-copy"
@@ -460,6 +643,7 @@ function Thinking() {
             'It costs time when deadlines are tight. It costs opinion when everyone’s in the room. It costs restraint when the temptation to add is louder than the discipline to remove. What survives all of that pressure and still insists on being right is what I’m here to protect.',
           ]}
         />
+        </DescriptionEntrance>
         <div className="motion-card"><MomentumIllustration /></div>
       </div>
     </section>
@@ -471,9 +655,13 @@ function ContactSection() {
     <section className="closing">
       <div className="closing-inner section-pad">
         <img className="pc-image" src={pcImage} alt="Classic Macintosh computer" />
+        <DescriptionEntrance>
         <h2>Let’s build something <em>worth</em> using.</h2>
         <ScrollReveal>I’m available for product design collaborations, UI audits, and long-term partnerships. If you’re building something that deserves to look as good as it works — let’s talk.</ScrollReveal>
+        <a className="closing-cta" href="mailto:hello@dividedsign.com">Get in touch <span aria-hidden="true">→</span></a>
+        </DescriptionEntrance>
       </div>
+      <div className="closing-buffer" aria-hidden="true" />
       <footer className="site-footer section-pad">
         <p><strong>©2026 DividedSign,</strong> <a href="mailto:Hi@DividedSign.com">Hi@DividedSign.com</a></p>
         <nav aria-label="Social links"><a href="#x">X</a><i /> <a href="#instagram">Instagram</a><i /> <a href="#dribbble">Dribbble</a></nav>
@@ -486,7 +674,18 @@ function ContactSection() {
 export default function App() {
   return (
     <main className="page-rail">
-      <header className="date-row">6 July 2026, Monday</header>
+      <header className="date-row">
+        <DecryptedText
+          text={getSystemDate()}
+          speed={32}
+          sequential
+          revealDirection="start"
+          animateOn="inViewHover"
+          characters="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,"
+          parentClassName="date-decrypt"
+          encryptedClassName="date-encrypted"
+        />
+      </header>
       <ConstructionBand />
       <Hero />
       <Feel />
