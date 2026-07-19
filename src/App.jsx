@@ -7,6 +7,7 @@ import FadeContent from './components/FadeContent.jsx';
 import GradualBlur from './components/GradualBlur.jsx';
 import ShinyText from './components/ShinyText.jsx';
 import DecryptedText from './components/DecryptedText.jsx';
+import DitheringShader from './components/DitheringShader.jsx';
 
 import avatar from '../assets/Images/avatar.webp';
 import blockLogo from '../assets/Logos/Work 1/Icon.png';
@@ -225,6 +226,15 @@ function MagneticField() {
   return (
     <div className="magnetic-card" ref={cardRef}>
       <canvas id="magneticField" ref={canvasRef} aria-hidden="true" />
+      <DitheringShader
+        className="mobile-feel-swirl"
+        shape="swirl"
+        type="4x4"
+        colorBack="#ffffff"
+        colorFront="#cfd8e0"
+        pxSize={4}
+        speed={0.9}
+      />
       <a className="contact-pill" ref={contactRef} href="mailto:hello@dividedsign.com">
         <ContactIcon /> Contact
       </a>
@@ -392,6 +402,7 @@ function WorkCard({ blurId, onCoverVisibility, logo, logoAlt, title, description
 
 function SelectedWorks() {
   const [activeCover, setActiveCover] = useState(null);
+  const [thinkingVisible, setThinkingVisible] = useState(false);
   const scrollYRef = useRef(typeof window === 'undefined' ? 0 : window.scrollY);
   const scrollingDownRef = useRef(false);
   const visibleCoversRef = useRef(new Set());
@@ -404,12 +415,21 @@ function SelectedWorks() {
       if (scrollingDownRef.current) {
         const visibleCovers = [...visibleCoversRef.current];
         if (visibleCovers.length) setActiveCover(visibleCovers[visibleCovers.length - 1]);
+        else setActiveCover(null);
       } else {
         setActiveCover(null);
       }
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const thinkingSection = document.querySelector('.thinking');
+    if (!thinkingSection) return undefined;
+    const observer = new IntersectionObserver(([entry]) => setThinkingVisible(entry.isIntersecting), { threshold: 0 });
+    observer.observe(thinkingSection);
+    return () => observer.disconnect();
   }, []);
 
   const handleCoverVisibility = useCallback((coverId, visible) => {
@@ -439,7 +459,7 @@ function SelectedWorks() {
           opacity={0.9}
           zIndex={20}
           className="project-viewport-blur"
-          style={{ opacity: activeCover ? 1 : 0 }}
+          style={{ opacity: activeCover && !thinkingVisible ? 1 : 0 }}
         />,
         document.body,
       )}
@@ -630,7 +650,18 @@ function Thinking() {
           ]}
         />
         </DescriptionEntrance>
-        <div className="motion-card"><VerticalLines /></div>
+        <div className="motion-card">
+          <VerticalLines />
+          <DitheringShader
+            className="mobile-thinking-wave"
+            shape="wave"
+            type="4x4"
+            colorBack="#ffffff"
+            colorFront="#cfd8e0"
+            pxSize={3}
+            speed={0.6}
+          />
+        </div>
       </div>
       <div className="thinking-block quality-block">
         <FadeTitle>Why is quality so rare?</FadeTitle>
@@ -644,7 +675,19 @@ function Thinking() {
           ]}
         />
         </DescriptionEntrance>
-        <div className="motion-card"><MomentumIllustration /></div>
+        <div className="motion-card">
+          <MomentumIllustration />
+          <DitheringShader
+            className="mobile-quality-ripple"
+            shape="ripple"
+            type="4x4"
+            colorBack="#ffffff"
+            colorFront="#cfd8e0"
+            pxSize={2}
+            speed={0.12}
+            zoom={2.4}
+          />
+        </div>
       </div>
     </section>
   );

@@ -39,6 +39,22 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "Bitter Pro";
+  src: url("assets/fonts/BitterPro-Medium.otf") format("opentype");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bitter Pro";
+  src: url("assets/fonts/BitterPro-MediumItalic.otf") format("opentype");
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+}
+
 * { box-sizing: border-box; }
 html { background: var(--white); }
 body {
@@ -50,6 +66,7 @@ body {
     linear-gradient(var(--line), var(--line)) 0 calc(100% - 1px) / 100% 1px no-repeat,
     var(--white);
   font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
   font-size: 14px;
   line-height: 1.42;
   letter-spacing: -.045em;
@@ -557,6 +574,7 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: -.5px;
 }
 .motion-card {
+  position: relative;
   width: 100%;
   height: 275px;
   display: grid;
@@ -569,6 +587,9 @@ a { color: inherit; text-decoration: none; }
 }
 .line-motion,
 .momentum { position: relative; width: 100%; height: 227px; cursor: default; }
+.mobile-feel-swirl { display: none; }
+.mobile-thinking-wave { display: none; }
+.mobile-quality-ripple { display: none; }
 .line-motion canvas {
   position: absolute;
   top: -12px;
@@ -684,6 +705,39 @@ a { color: inherit; text-decoration: none; }
   .work-cover { height: min(65vw, 385px); }
   .contact-pill { left: 13%; }
   .thinking { padding-top: 72px; }
+  .thinking-block:first-child .line-motion { display: none; }
+  .mobile-thinking-wave {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .quality-block .momentum { display: none; }
+  .mobile-quality-ripple {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .mobile-feel-swirl {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .magnetic-card #magneticField { display: none; }
+  .magnetic-card .contact-pill {
+    --magnet-x: 0px !important;
+    --magnet-y: 0px !important;
+    --magnet-scale: 1 !important;
+    z-index: 1;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) !important;
+  }
   .closing-inner h2 { font-size: 32px; }
   .site-footer { height: auto; min-height: 72px; align-items: flex-start; gap: 24px; padding-block: 20px; }
 }
