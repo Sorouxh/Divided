@@ -157,12 +157,50 @@ a { color: inherit; text-decoration: none; }
   border-bottom: 1px solid var(--line);
 }
 .avatar {
+  display: block;
   width: 48px;
   height: 48px;
   border-radius: 50%;
   object-fit: cover;
   object-position: 52% 25%;
   filter: grayscale(1);
+}
+.avatar-tooltip {
+  position: relative;
+  display: block;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  outline: none;
+}
+.avatar-tooltip:focus-visible {
+  box-shadow: 0 0 0 2px rgba(50,64,79,.28);
+}
+.avatar-tooltip-content {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 10px);
+  z-index: 10;
+  width: max-content;
+  padding: 7px 10px;
+  border: 1px solid #e8eaec;
+  border-radius: 7px;
+  color: #fff;
+  background: #171717;
+  box-shadow: 0 6px 18px rgba(50,64,79,.12);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: -.02em;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(4px, -50%);
+  transition: opacity .18s ease, transform .18s ease;
+}
+.avatar-tooltip:hover .avatar-tooltip-content,
+.avatar-tooltip:focus .avatar-tooltip-content {
+  opacity: 1;
+  transform: translate(0, -50%);
 }
 .hero h1 {
   margin-top: 28px;
@@ -307,12 +345,10 @@ a { color: inherit; text-decoration: none; }
   height: 100%;
 }
 .contact-pill {
-  --magnet-x: 0px;
-  --magnet-y: 0px;
-  --magnet-scale: 1;
   position: absolute;
   top: 50%;
-  left: 106px;
+  left: 50%;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -326,8 +362,7 @@ a { color: inherit; text-decoration: none; }
   font-weight: 500;
   line-height: 16px;
   letter-spacing: -.02em;
-  transform: translate(var(--magnet-x), calc(-50% + var(--magnet-y))) scale(var(--magnet-scale));
-  will-change: transform;
+  transform: translate(-50%, -50%);
   transition: background .25s ease;
 }
 .contact-pill:hover { background: #10b57e; }
@@ -587,9 +622,18 @@ a { color: inherit; text-decoration: none; }
 }
 .line-motion,
 .momentum { position: relative; width: 100%; height: 227px; cursor: default; }
-.mobile-feel-swirl { display: none; }
-.mobile-thinking-wave { display: none; }
-.mobile-quality-ripple { display: none; }
+.mobile-feel-swirl,
+.mobile-thinking-wave,
+.mobile-quality-ripple {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.magnetic-card #magneticField,
+.thinking-block:first-child .line-motion,
+.quality-block .momentum { display: none; }
 .line-motion canvas {
   position: absolute;
   top: -12px;
@@ -703,41 +747,7 @@ a { color: inherit; text-decoration: none; }
   .showcase-track { padding-inline: 16px; }
   .showcase figure { width: 340px; height: 425px; }
   .work-cover { height: min(65vw, 385px); }
-  .contact-pill { left: 13%; }
   .thinking { padding-top: 72px; }
-  .thinking-block:first-child .line-motion { display: none; }
-  .mobile-thinking-wave {
-    position: absolute;
-    inset: 0;
-    display: block;
-    width: 100%;
-    height: 100%;
-  }
-  .quality-block .momentum { display: none; }
-  .mobile-quality-ripple {
-    position: absolute;
-    inset: 0;
-    display: block;
-    width: 100%;
-    height: 100%;
-  }
-  .mobile-feel-swirl {
-    position: absolute;
-    inset: 0;
-    display: block;
-    width: 100%;
-    height: 100%;
-  }
-  .magnetic-card #magneticField { display: none; }
-  .magnetic-card .contact-pill {
-    --magnet-x: 0px !important;
-    --magnet-y: 0px !important;
-    --magnet-scale: 1 !important;
-    z-index: 1;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) !important;
-  }
   .closing-inner h2 { font-size: 32px; }
   .site-footer { height: auto; min-height: 72px; align-items: flex-start; gap: 24px; padding-block: 20px; }
 }
@@ -750,7 +760,6 @@ a { color: inherit; text-decoration: none; }
   .section-pad, .date-row { padding-inline: 16px; }
   .service-pills { margin-top: 20px; }
   .magnetic-card { height: 200px; }
-  .contact-pill { left: 9%; }
 }
 
 @media (prefers-reduced-motion: reduce) {

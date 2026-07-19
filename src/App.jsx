@@ -69,7 +69,10 @@ function Hero() {
   return (
     <>
       <section className="hero section-pad">
-        <img className="avatar" src={avatar} alt="Portrait of Soroush" />
+        <span className="avatar-tooltip" tabIndex="0" aria-describedby="profile-tooltip">
+          <img className="avatar" src={avatar} alt="Portrait of Soroush" />
+          <span className="avatar-tooltip-content" id="profile-tooltip" role="tooltip">Yeah that&apos;s me :)</span>
+        </span>
         <SplitText
           tag="h1"
           className="hero-headline"
@@ -120,6 +123,7 @@ function MagneticField() {
     const card = cardRef.current;
     const canvas = canvasRef.current;
     const contact = contactRef.current;
+    if (!card || !canvas || !contact || getComputedStyle(canvas).display === 'none') return undefined;
     const context = canvas.getContext('2d');
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
     const columns = 24;
@@ -235,7 +239,7 @@ function MagneticField() {
         pxSize={4}
         speed={0.9}
       />
-      <a className="contact-pill" ref={contactRef} href="mailto:hello@dividedsign.com">
+      <a className="contact-pill" ref={contactRef} href="mailto:hi@dividedsign.com">
         <ContactIcon /> Contact
       </a>
     </div>
@@ -680,10 +684,10 @@ function Thinking() {
           <DitheringShader
             className="mobile-quality-ripple"
             shape="ripple"
-            type="4x4"
+            type="6x6"
             colorBack="#ffffff"
             colorFront="#cfd8e0"
-            pxSize={2}
+            pxSize={3}
             speed={0.12}
             zoom={2.4}
           />
@@ -700,14 +704,14 @@ function ContactSection() {
         <img className="pc-image" src={pcImage} alt="Classic Macintosh computer" />
         <DescriptionEntrance>
         <h2>Let’s build something <em>worth</em> using.</h2>
-        <ScrollReveal>I’m available for product design collaborations, UI audits, and long-term partnerships. If you’re building something that deserves to look as good as it works — let’s talk.</ScrollReveal>
-        <a className="closing-cta" href="mailto:hello@dividedsign.com">Get in touch <span aria-hidden="true">→</span></a>
+        <ScrollReveal start="top 88%" end="top 64%">I’m available for product design collaborations, UI audits, and long-term partnerships. If you’re building something that deserves to look as good as it works — let’s talk.</ScrollReveal>
+        <a className="closing-cta" href="mailto:hi@dividedsign.com">Get in touch <span aria-hidden="true">→</span></a>
         </DescriptionEntrance>
       </div>
       <div className="closing-buffer" aria-hidden="true" />
       <footer className="site-footer section-pad">
-        <p><strong>©2026 DividedSign,</strong> <a href="mailto:Hi@DividedSign.com">Hi@DividedSign.com</a></p>
-        <nav aria-label="Social links"><a href="#x">X</a><i /> <a href="#instagram">Instagram</a><i /> <a href="#dribbble">Dribbble</a></nav>
+        <p><strong>©2026 DividedSign,</strong> <a href="mailto:hi@dividedsign.com">hi@dividedsign.com</a></p>
+        <nav aria-label="Social links"><a href="https://x.com/dividedsign" target="_blank" rel="noreferrer">X</a><i /> <a href="https://instagram.com/dividedsign" target="_blank" rel="noreferrer">Instagram</a><i /> <a href="https://dribbble.com/dividedsign" target="_blank" rel="noreferrer">Dribbble</a></nav>
       </footer>
       <ConstructionBand className="footer-band" />
     </section>

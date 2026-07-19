@@ -31,6 +31,20 @@ float bayer4(vec2 p) {
   float values[16] = float[16](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
   return values[int(row * 4.0 + col)] / 16.0;
 }
+float bayer6(vec2 p) {
+  vec2 q = mod(p, 6.0);
+  float row = floor(q.y);
+  float col = floor(q.x);
+  float values[36] = float[36](
+    0., 18., 4., 22., 1., 19.,
+    27., 9., 31., 13., 28., 10.,
+    6., 24., 2., 20., 7., 25.,
+    33., 15., 29., 11., 34., 16.,
+    3., 21., 5., 23., 8., 26.,
+    30., 12., 32., 14., 35., 17.
+  );
+  return values[int(row * 6.0 + col)] / 36.0;
+}
 float bayer8(vec2 p) {
   return (bayer4(floor(p * .5)) * 4.0 + bayer2(p)) / 5.0;
 }
@@ -51,7 +65,7 @@ void main() {
   float swirl = mix(0.0, twist, smoothstep(0.0, 1.0, pow(radius, 1.2)));
   float ripple = sin(pow(rippleRadius, 1.7) * 7.0 - 1.5 * u_time) * .5 + .5;
   float shape = u_shape < 4.5 ? wave : (u_shape < 5.5 ? ripple : swirl);
-  float dither = u_type < 2.5 ? bayer2(pixel / u_pxSize) : (u_type < 3.5 ? bayer4(pixel / u_pxSize) : bayer8(pixel / u_pxSize));
+  float dither = u_type < 2.5 ? bayer2(pixel / u_pxSize) : (u_type < 3.5 ? bayer4(pixel / u_pxSize) : (u_type < 6.5 ? bayer6(pixel / u_pxSize) : bayer8(pixel / u_pxSize)));
   float result = step(.5, shape + dither - .5);
   vec3 color = mix(u_colorBack.rgb, u_colorFront.rgb, result);
   float alpha = mix(u_colorBack.a, u_colorFront.a, result);
@@ -132,7 +146,7 @@ export default function DitheringShader({
       gl.uniform4fv(uniforms.back, hexToRgba(colorBack));
       gl.uniform4fv(uniforms.front, hexToRgba(colorFront));
       gl.uniform1f(uniforms.pxSize, pxSize * ratio);
-      gl.uniform1f(uniforms.type, type === '2x2' ? 2 : type === '4x4' ? 3 : 4);
+      gl.uniform1f(uniforms.type, type === '2x2' ? 2 : type === '4x4' ? 3 : type === '6x6' ? 6 : 8);
       gl.uniform1f(uniforms.shape, shape === 'wave' ? 4 : shape === 'ripple' ? 5 : 6);
       gl.uniform1f(uniforms.zoom, zoom);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
