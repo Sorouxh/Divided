@@ -8,6 +8,8 @@ import GradualBlur from './components/GradualBlur.jsx';
 import ShinyText from './components/ShinyText.jsx';
 import DecryptedText from './components/DecryptedText.jsx';
 import DitheringShader from './components/DitheringShader.jsx';
+import DirectionalUnderline from './components/DirectionalUnderline.jsx';
+import InteractiveContactButton from './components/InteractiveContactButton.jsx';
 
 import avatar from '../assets/Images/avatar.webp';
 import blockLogo from '../assets/Logos/Work 1/Icon.png';
@@ -20,13 +22,27 @@ import pcImage from '../assets/Images/pc.png';
 
 const services = ['Landing Page', 'Mobile Apps', 'Decks', 'Web & Mobile UI', 'Visual Design', '+More'];
 const projectTags = ['Landing Page', 'Mobile Apps', 'Decks'];
-const carouselImages = import.meta.glob('../assets/Images/Image*', { eager: true, query: '?url', import: 'default' });
-const previews = Object.entries(carouselImages)
-  .sort(([first], [second]) => first.localeCompare(second, undefined, { numeric: true }))
-  .map(([path, src]) => ({
-    src,
-    alt: path.split('/').pop().replace(/^Image-?/, 'Design preview ').replace(/\.[^.]+$/, ''),
-  }));
+const howIThinkVisual = 'swirl';
+const savedHowIThinkWave = Object.freeze({
+  shape: 'wave', type: '4x4', colorBack: '#ffffff', colorFront: '#cfd8e0', pxSize: 3, speed: 0.6,
+});
+const howIThinkSwirl = Object.freeze({
+  shape: 'swirl', type: '4x4', colorBack: '#ffffff', colorFront: '#cfd8e0', pxSize: 3, speed: 0.55, zoom: 0.55,
+});
+const carouselImages = import.meta.glob('../assets/Images/*.png', { eager: true, query: '?url', import: 'default' });
+const numberedPreviews = Object.entries(carouselImages)
+  .map(([path, src]) => {
+    const match = path.match(/\/(\d+)\.png$/);
+    return match ? { src, number: Number(match[1]), alt: `Design preview ${match[1]}` } : null;
+  })
+  .filter(Boolean)
+  .sort((first, second) => first.number - second.number);
+const previews = [
+  ...numberedPreviews.filter(({ number }) => number >= 8 && number <= 16).reverse(),
+  ...numberedPreviews.filter(({ number }) => number === 1),
+  ...numberedPreviews.filter(({ number }) => number >= 2 && number <= 7),
+];
+const carouselCenterIndex = previews.findIndex(({ number }) => number === 1);
 const loopingPreviews = [...previews, ...previews, ...previews];
 
 function getSystemDate() {
@@ -101,16 +117,6 @@ function Hero() {
         </AnimatedContent>
       </section>
     </>
-  );
-}
-
-function ContactIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-      <path d="M9 15l6 -6" />
-      <path d="M10 9h5v5" />
-    </svg>
   );
 }
 
@@ -227,6 +233,53 @@ function MagneticField() {
     };
   }, []);
 
+  useEffect(() => {
+    const card = cardRef.current;
+    const contact = contactRef.current;
+    if (!card || !contact || !matchMedia('(pointer: fine)').matches) return undefined;
+
+    const current = { x: 0, y: 0, scale: 1 };
+    const target = { x: 0, y: 0, scale: 1 };
+    const radius = 150;
+    const maxPull = 9;
+    let frameId = 0;
+
+    const onPointerMove = (event) => {
+      const bounds = card.getBoundingClientRect();
+      const dx = event.clientX - (bounds.left + bounds.width / 2);
+      const dy = event.clientY - (bounds.top + bounds.height / 2);
+      const distance = Math.hypot(dx, dy);
+      const influence = Math.max(0, 1 - distance / radius);
+      const pull = distance > 0 ? Math.min(maxPull, distance * .24 * influence) / distance : 0;
+      target.x = dx * pull;
+      target.y = dy * pull;
+      target.scale = 1 + influence * .015;
+    };
+    const reset = () => {
+      target.x = 0;
+      target.y = 0;
+      target.scale = 1;
+    };
+    const animate = () => {
+      current.x += (target.x - current.x) * .16;
+      current.y += (target.y - current.y) * .16;
+      current.scale += (target.scale - current.scale) * .16;
+      contact.style.setProperty('--magnet-x', `${current.x.toFixed(2)}px`);
+      contact.style.setProperty('--magnet-y', `${current.y.toFixed(2)}px`);
+      contact.style.setProperty('--magnet-scale', current.scale.toFixed(3));
+      frameId = requestAnimationFrame(animate);
+    };
+
+    card.addEventListener('pointermove', onPointerMove);
+    card.addEventListener('pointerleave', reset);
+    animate();
+    return () => {
+      cancelAnimationFrame(frameId);
+      card.removeEventListener('pointermove', onPointerMove);
+      card.removeEventListener('pointerleave', reset);
+    };
+  }, []);
+
   return (
     <div className="magnetic-card" ref={cardRef}>
       <canvas id="magneticField" ref={canvasRef} aria-hidden="true" />
@@ -239,9 +292,7 @@ function MagneticField() {
         pxSize={4}
         speed={0.9}
       />
-      <a className="contact-pill" ref={contactRef} href="mailto:hi@dividedsign.com">
-        <ContactIcon /> Contact
-      </a>
+      <InteractiveContactButton ref={contactRef} href="mailto:hi@dividedsign.com">Contact</InteractiveContactButton>
     </div>
   );
 }
@@ -272,74 +323,139 @@ function Feel() {
 
 function Showcase() {
   const viewportRef = useRef(null);
-  const dragRef = useRef({ active: false, startX: 0, startScroll: 0, lastX: 0, lastTime: 0, velocity: 0, moved: false, frame: 0 });
-  const [activePreview, setActivePreview] = useState(null);
-
+  const dragRef = useRef({
+    active: false,
+    startX: 0,
+    startScroll: 0,
+    targetScroll: 0,
+    lastX: 0,
+    lastTime: 0,
+    velocity: 0,
+    moved: false,
+    frame: 0,
+    pointerId: null,
+  });
   useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return undefined;
+    const drag = dragRef.current;
     const getSetWidth = () => viewport.scrollWidth / 3;
-    const startInMiddle = () => { viewport.scrollLeft = getSetWidth(); };
+    const centerFirstImage = () => {
+      const track = viewport.querySelector('.showcase-track');
+      const centeredItem = track?.children[previews.length + carouselCenterIndex];
+      if (!centeredItem) return;
+      const centeredScroll = centeredItem.offsetLeft - (viewport.clientWidth - centeredItem.offsetWidth) / 2;
+      viewport.scrollLeft = centeredScroll;
+      drag.targetScroll = centeredScroll;
+      drag.startScroll = centeredScroll;
+    };
     const wrap = () => {
       const setWidth = getSetWidth();
       if (!setWidth) return;
-      if (viewport.scrollLeft < setWidth * 0.25) viewport.scrollLeft += setWidth;
-      if (viewport.scrollLeft > setWidth * 1.75) viewport.scrollLeft -= setWidth;
+      let shift = 0;
+      if (viewport.scrollLeft < setWidth * 0.25) shift = setWidth;
+      if (viewport.scrollLeft > setWidth * 1.75) shift = -setWidth;
+      if (shift) {
+        viewport.scrollLeft += shift;
+        drag.targetScroll += shift;
+        drag.startScroll += shift;
+      } else if (!drag.active && !drag.frame) {
+        drag.targetScroll = viewport.scrollLeft;
+      }
     };
-    startInMiddle();
+    let lastViewportWidth = viewport.clientWidth;
+    const centerFrame = requestAnimationFrame(centerFirstImage);
     viewport.addEventListener('scroll', wrap, { passive: true });
-    const resizeObserver = new ResizeObserver(startInMiddle);
+    const resizeObserver = new ResizeObserver(() => {
+      const nextViewportWidth = viewport.clientWidth;
+      if (nextViewportWidth === lastViewportWidth) return;
+      lastViewportWidth = nextViewportWidth;
+      centerFirstImage();
+    });
     resizeObserver.observe(viewport);
     return () => {
+      cancelAnimationFrame(centerFrame);
+      cancelAnimationFrame(drag.frame);
       viewport.removeEventListener('scroll', wrap);
       resizeObserver.disconnect();
     };
   }, []);
 
-  useEffect(() => {
-    if (!activePreview) return undefined;
-    const onKeyDown = (event) => { if (event.key === 'Escape') setActivePreview(null); };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [activePreview]);
-
   const startDrag = (event) => {
     const viewport = viewportRef.current;
     const drag = dragRef.current;
     cancelAnimationFrame(drag.frame);
+    drag.frame = 0;
     drag.active = true;
     drag.moved = false;
     drag.startX = drag.lastX = event.clientX;
-    drag.startScroll = viewport.scrollLeft;
+    drag.startScroll = drag.targetScroll = viewport.scrollLeft;
     drag.lastTime = performance.now();
     drag.velocity = 0;
-    viewport.setPointerCapture(event.pointerId);
+    drag.pointerId = event.pointerId;
   };
-  const moveDrag = (event) => {
+
+  const animateDrag = () => {
     const viewport = viewportRef.current;
+    const drag = dragRef.current;
+    if (!viewport) return;
+
+    if (!drag.active) {
+      drag.velocity *= 0.94;
+      drag.targetScroll += drag.velocity;
+    }
+
+    const setWidth = viewport.scrollWidth / 3;
+    if (setWidth) {
+      let shift = 0;
+      if (drag.targetScroll < setWidth * 0.25) shift = setWidth;
+      if (drag.targetScroll > setWidth * 1.75) shift = -setWidth;
+      if (shift) {
+        drag.targetScroll += shift;
+        drag.startScroll += shift;
+        viewport.scrollLeft += shift;
+      }
+    }
+
+    const distance = drag.targetScroll - viewport.scrollLeft;
+    viewport.scrollLeft += distance * 0.2;
+    if (drag.active || Math.abs(drag.velocity) > 0.08 || Math.abs(distance) > 0.12) {
+      drag.frame = requestAnimationFrame(animateDrag);
+    } else {
+      viewport.scrollLeft = drag.targetScroll;
+      drag.frame = 0;
+    }
+  };
+
+  const scheduleDrag = () => {
+    const drag = dragRef.current;
+    if (!drag.frame) drag.frame = requestAnimationFrame(animateDrag);
+  };
+
+  const moveDrag = (event) => {
     const drag = dragRef.current;
     if (!drag.active) return;
     const now = performance.now();
     const delta = event.clientX - drag.startX;
-    drag.moved ||= Math.abs(delta) > 5;
-    viewport.scrollLeft = drag.startScroll - delta;
-    drag.velocity = (drag.lastX - event.clientX) / Math.max(now - drag.lastTime, 1) * 16;
+    if (!drag.moved && Math.abs(delta) > 5) {
+      drag.moved = true;
+      viewportRef.current?.setPointerCapture?.(event.pointerId);
+    }
+    drag.targetScroll = drag.startScroll - delta;
+    const nextVelocity = (drag.lastX - event.clientX) / Math.max(now - drag.lastTime, 1) * 16;
+    drag.velocity = drag.velocity * 0.65 + nextVelocity * 0.35;
     drag.lastX = event.clientX;
     drag.lastTime = now;
+    scheduleDrag();
   };
   const endDrag = (event) => {
     const viewport = viewportRef.current;
     const drag = dragRef.current;
     if (!drag.active) return;
     drag.active = false;
-    viewport.releasePointerCapture?.(event.pointerId);
-    const glide = () => {
-      drag.velocity *= 0.93;
-      if (Math.abs(drag.velocity) < 0.15) return;
-      viewport.scrollLeft += drag.velocity;
-      drag.frame = requestAnimationFrame(glide);
-    };
-    drag.frame = requestAnimationFrame(glide);
+    if (viewport.hasPointerCapture?.(event.pointerId)) viewport.releasePointerCapture(event.pointerId);
+    drag.pointerId = null;
+    scheduleDrag();
   };
 
   return (
@@ -353,25 +469,17 @@ function Showcase() {
       onPointerCancel={endDrag}
     >
       <div className="showcase-track">
-        {loopingPreviews.map(({ src, alt }, index) => (
+        {loopingPreviews.map(({ src, alt, number }, index) => (
           <figure key={`${src}-${index}`}>
-            <button type="button" onClick={() => !dragRef.current.moved && setActivePreview({ src, alt })} aria-label={`Open ${alt}`}>
-              <img src={src} alt={alt} draggable="false" />
-            </button>
+            <img src={src} alt={alt} data-carousel-image={number} draggable="false" />
           </figure>
         ))}
       </div>
-      {activePreview && createPortal((
-        <div className="preview-modal" role="dialog" aria-modal="true" aria-label={activePreview.alt} onClick={() => setActivePreview(null)}>
-          <button className="preview-close" type="button" aria-label="Close image preview" onClick={() => setActivePreview(null)}>×</button>
-          <img src={activePreview.src} alt={activePreview.alt} onClick={(event) => event.stopPropagation()} />
-        </div>
-      ), document.body)}
     </section>
   );
 }
 
-function WorkCard({ blurId, onCoverVisibility, logo, logoAlt, title, description, cover, coverAlt, coverClass }) {
+function WorkCard({ blurId, onCoverVisibility, logo, logoAlt, title, description, cover, coverAlt, coverClass, featured = false, showTags = true }) {
   const coverRef = useRef(null);
 
   useEffect(() => {
@@ -388,7 +496,7 @@ function WorkCard({ blurId, onCoverVisibility, logo, logoAlt, title, description
   }, [blurId, onCoverVisibility]);
 
   return (
-    <article className="work-card">
+    <article className={`work-card${featured ? ' featured-work' : ''}`}>
       <DescriptionEntrance className="work-logo-motion"><img className="work-logo" src={logo} alt={logoAlt} /></DescriptionEntrance>
       <div className="work-heading">
         <DescriptionEntrance className="work-title-motion"><h3>{title}</h3></DescriptionEntrance>
@@ -397,9 +505,9 @@ function WorkCard({ blurId, onCoverVisibility, logo, logoAlt, title, description
       <div className={`work-cover ${coverClass}`} ref={coverRef}>
         <img src={cover} alt={coverAlt} />
       </div>
-      <div className="work-tags" aria-label="Project disciplines">
+      {showTags && <div className="work-tags" aria-label="Project disciplines">
         {projectTags.map((tag) => <span key={tag}>{tag}</span>)}
-      </div>
+      </div>}
     </article>
   );
 }
@@ -446,10 +554,43 @@ function SelectedWorks() {
     <section className="works">
       <ConstructionBand className="works-band" />
       <div className="works-inner">
-        <FadeTitle className="works-title">Selected Works</FadeTitle>
-        <WorkCard blurId="block" onCoverVisibility={handleCoverVisibility} logo={blockLogo} logoAlt="O’Block logo" title="O’Block: Minimal Block Game" description="Starting in January 2024, I took on a daily challenge inspired by the Twitter community." cover={blockCover} coverAlt="2954 minimal block game interface" coverClass="cover-block" />
-        <WorkCard blurId="moqderate" onCoverVisibility={handleCoverVisibility} logo={moqderateLogo} logoAlt="Moqderate logo" title="Moqderate" description="A calm moderation workspace built to turn noisy community signals into clear decisions." cover={moqderateCover} coverAlt="Moqderate content workspace interface" coverClass="cover-moqderate" />
-        <WorkCard blurId="piqo" onCoverVisibility={handleCoverVisibility} logo={piqoLogo} logoAlt="Piqo Design logo" title="Piqo Design: Digital product design" description="Designed the dashboard and chatbot experience for an AI mental health assistant." cover={piqoCover} coverAlt="Digital wallet product interface" coverClass="cover-piqo" />
+        <WorkCard
+          featured
+          showTags={false}
+          blurId="block"
+          onCoverVisibility={handleCoverVisibility}
+          logo={blockLogo}
+          logoAlt="O’Block logo"
+          title={<><span>O’Block</span><span className="featured-title-muted"> — Minimal Block Game</span></>}
+          description="Starting in January 2024, I took on a daily challenge inspired by the Twitter community."
+          cover={blockCover}
+          coverAlt="2954 minimal block game interface"
+          coverClass="cover-block"
+        />
+        <WorkCard
+          showTags={false}
+          blurId="moqderate"
+          onCoverVisibility={handleCoverVisibility}
+          logo={moqderateLogo}
+          logoAlt="Mooderate logo"
+          title={<><span>Mooderate</span><span className="featured-title-muted"> — Moodboard space</span></>}
+          description="A calm moderation workspace built to turn noisy community signals into clear decisions."
+          cover={moqderateCover}
+          coverAlt="Mooderate moodboard workspace interface"
+          coverClass="cover-moqderate"
+        />
+        <WorkCard
+          showTags={false}
+          blurId="piqo"
+          onCoverVisibility={handleCoverVisibility}
+          logo={piqoLogo}
+          logoAlt="Piqo Design logo"
+          title={<><span>Piqo Design</span><span className="featured-title-muted"> — Digital product design</span></>}
+          description="Designed the dashboard and chatbot experience for an AI mental health assistant."
+          cover={piqoCover}
+          coverAlt="Digital wallet product interface"
+          coverClass="cover-piqo"
+        />
       </div>
       {createPortal(
         <GradualBlur
@@ -654,18 +795,6 @@ function Thinking() {
           ]}
         />
         </DescriptionEntrance>
-        <div className="motion-card">
-          <VerticalLines />
-          <DitheringShader
-            className="mobile-thinking-wave"
-            shape="wave"
-            type="4x4"
-            colorBack="#ffffff"
-            colorFront="#cfd8e0"
-            pxSize={3}
-            speed={0.6}
-          />
-        </div>
       </div>
       <div className="thinking-block quality-block">
         <FadeTitle>Why is quality so rare?</FadeTitle>
@@ -680,17 +809,9 @@ function Thinking() {
         />
         </DescriptionEntrance>
         <div className="motion-card">
-          <MomentumIllustration />
-          <DitheringShader
-            className="mobile-quality-ripple"
-            shape="ripple"
-            type="6x6"
-            colorBack="#ffffff"
-            colorFront="#cfd8e0"
-            pxSize={3}
-            speed={0.12}
-            zoom={2.4}
-          />
+          {howIThinkVisual === 'wave'
+            ? <DitheringShader className="mobile-thinking-wave" {...savedHowIThinkWave} />
+            : <DitheringShader className="mobile-thinking-wave" {...howIThinkSwirl} />}
         </div>
       </div>
     </section>
@@ -711,7 +832,11 @@ function ContactSection() {
       <div className="closing-buffer" aria-hidden="true" />
       <footer className="site-footer section-pad">
         <p><strong>©2026 DividedSign,</strong> <a href="mailto:hi@dividedsign.com">hi@dividedsign.com</a></p>
-        <nav aria-label="Social links"><a href="https://x.com/dividedsign" target="_blank" rel="noreferrer">X</a><i /> <a href="https://instagram.com/dividedsign" target="_blank" rel="noreferrer">Instagram</a><i /> <a href="https://dribbble.com/dividedsign" target="_blank" rel="noreferrer">Dribbble</a></nav>
+        <nav aria-label="Social links">
+          <a href="https://x.com/dividedsign" target="_blank" rel="noreferrer"><DirectionalUnderline>X (Twitter)</DirectionalUnderline></a><i />
+          <a href="https://instagram.com/dividedsign" target="_blank" rel="noreferrer"><DirectionalUnderline direction="right">Instagram</DirectionalUnderline></a><i />
+          <a href="https://dribbble.com/dividedsign" target="_blank" rel="noreferrer"><DirectionalUnderline>Dribbble</DirectionalUnderline></a>
+        </nav>
       </footer>
       <ConstructionBand className="footer-band" />
     </section>
