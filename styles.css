@@ -559,6 +559,65 @@ a { color: inherit; text-decoration: none; }
   object-fit: initial;
   transform: none;
 }
+.has-custom-cursor { cursor: none !important; }
+.user-cursor-layer {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.user-cursor-arrow,
+.user-cursor-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+  transition: opacity .14s ease;
+}
+.user-cursor-arrow {
+  z-index: 2;
+  margin: -2px 0 0 -2px;
+  overflow: visible;
+  transform-origin: 0 0;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.16));
+}
+.user-cursor-label {
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-weight: 500;
+  letter-spacing: -.02em;
+  white-space: nowrap;
+  user-select: none;
+}
+.user-cursor-layer--project .user-cursor-label {
+  width: 32px;
+  height: 32px;
+  margin: 12px 0 0 22px;
+  padding: 0;
+  justify-content: center;
+  color: #171717;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .2);
+  transform-origin: 0 50%;
+}
+.user-cursor-layer--project .user-cursor-label svg { width: 16px; height: 16px; }
+.user-cursor-layer--drag .user-cursor-label {
+  margin: -14px 0 0 -20px;
+  padding: 6px 10px;
+  color: #32404f;
+  background: #cfd8e0;
+  box-shadow: 0 3px 10px rgba(50, 64, 79, .12), 0 1px 2px rgba(50, 64, 79, .1);
+  font-size: 12px;
+  line-height: 16px;
+  transform-origin: 50% 50%;
+}
+@media (pointer: coarse) {
+  .user-cursor-layer { display: none; }
+}
 .cover-block,
 .cover-moqderate,
 .cover-piqo { background: transparent; }
@@ -726,7 +785,8 @@ a { color: inherit; text-decoration: none; }
 .closing-cta:hover { background: #10b57e; transform: translateY(-1px); }
 .closing-cta span { font-size: 20px; line-height: 1; }
 .closing-buffer { height: 64px; }
-.project-viewport-blur { transition: none; }
+.project-viewport-blur { transition: opacity .5s cubic-bezier(.22, 1, .36, 1); }
+.project-viewport-blur.is-active { transition-duration: .12s; }
 .site-footer {
   height: 72px;
   display: flex;
@@ -793,6 +853,12 @@ a { color: inherit; text-decoration: none; }
 :focus-visible { outline: 2px solid rgba(50,64,79,.35); outline-offset: 3px; }
 
 @media (max-width: 640px) {
+  html, body, #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+  }
   body { background-position-y: 0, 100%; }
   .page-rail { box-shadow: none; }
   .hero { height: auto; min-height: 300px; padding-bottom: 40px; }

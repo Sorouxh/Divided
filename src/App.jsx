@@ -10,6 +10,7 @@ import DecryptedText from './components/DecryptedText.jsx';
 import DitheringShader from './components/DitheringShader.jsx';
 import DirectionalUnderline from './components/DirectionalUnderline.jsx';
 import InteractiveContactButton from './components/InteractiveContactButton.jsx';
+import ProjectCursor from './components/ProjectCursor.jsx';
 
 import avatar from '../assets/Images/avatar.webp';
 import blockLogo from '../assets/Logos/Work 1/Icon.png';
@@ -475,6 +476,7 @@ function Showcase() {
           </figure>
         ))}
       </div>
+      <ProjectCursor targetRef={viewportRef} label="Drag" variant="drag" />
     </section>
   );
 }
@@ -487,7 +489,7 @@ function WorkCard({ blurId, onCoverVisibility, logo, logoAlt, title, description
     if (!coverElement) return undefined;
     const observer = new IntersectionObserver(([entry]) => {
       onCoverVisibility(blurId, entry.isIntersecting);
-    }, { threshold: 0 });
+    }, { threshold: 0, rootMargin: '96px 0px 96px 0px' });
     observer.observe(coverElement);
     return () => {
       observer.disconnect();
@@ -504,6 +506,7 @@ function WorkCard({ blurId, onCoverVisibility, logo, logoAlt, title, description
       </div>
       <div className={`work-cover ${coverClass}`} ref={coverRef}>
         <img src={cover} alt={coverAlt} />
+        <ProjectCursor targetRef={coverRef} />
       </div>
       {showTags && <div className="work-tags" aria-label="Project disciplines">
         {projectTags.map((tag) => <span key={tag}>{tag}</span>)}
@@ -514,40 +517,13 @@ function WorkCard({ blurId, onCoverVisibility, logo, logoAlt, title, description
 
 function SelectedWorks() {
   const [activeCover, setActiveCover] = useState(null);
-  const [thinkingVisible, setThinkingVisible] = useState(false);
-  const scrollYRef = useRef(typeof window === 'undefined' ? 0 : window.scrollY);
-  const scrollingDownRef = useRef(false);
   const visibleCoversRef = useRef(new Set());
-
-  useEffect(() => {
-    const onScroll = () => {
-      const nextY = window.scrollY;
-      scrollingDownRef.current = nextY > scrollYRef.current;
-      scrollYRef.current = nextY;
-      if (scrollingDownRef.current) {
-        const visibleCovers = [...visibleCoversRef.current];
-        if (visibleCovers.length) setActiveCover(visibleCovers[visibleCovers.length - 1]);
-        else setActiveCover(null);
-      } else {
-        setActiveCover(null);
-      }
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  useEffect(() => {
-    const thinkingSection = document.querySelector('.thinking');
-    if (!thinkingSection) return undefined;
-    const observer = new IntersectionObserver(([entry]) => setThinkingVisible(entry.isIntersecting), { threshold: 0 });
-    observer.observe(thinkingSection);
-    return () => observer.disconnect();
-  }, []);
 
   const handleCoverVisibility = useCallback((coverId, visible) => {
     if (visible) visibleCoversRef.current.add(coverId);
     else visibleCoversRef.current.delete(coverId);
-    setActiveCover((current) => (visible && scrollingDownRef.current ? coverId : current === coverId ? null : current));
+    const visibleCovers = [...visibleCoversRef.current];
+    setActiveCover(visibleCovers[visibleCovers.length - 1] ?? null);
   }, []);
 
   return (
@@ -603,8 +579,8 @@ function SelectedWorks() {
           exponential
           opacity={0.9}
           zIndex={20}
-          className="project-viewport-blur"
-          style={{ opacity: activeCover && !thinkingVisible ? 1 : 0 }}
+          className={`project-viewport-blur${activeCover ? ' is-active' : ''}`}
+          style={{ opacity: activeCover ? 1 : 0 }}
         />,
         document.body,
       )}
@@ -825,7 +801,7 @@ function ContactSection() {
         <img className="pc-image" src={pcImage} alt="Classic Macintosh computer" />
         <DescriptionEntrance>
         <h2>Let’s build something <em>worth</em> using.</h2>
-        <ScrollReveal start="top 88%" end="top 64%">I’m available for product design collaborations, UI audits, and long-term partnerships. If you’re building something that deserves to look as good as it works — let’s talk.</ScrollReveal>
+        <ScrollReveal start="top 88%" end="top 64%">Available for product design collaborations, UI audits, and long-term partnerships. Building something that deserves to look as good as it works? Let's talk.</ScrollReveal>
         <a className="closing-cta" href="mailto:hi@dividedsign.com">Get in touch <span aria-hidden="true">→</span></a>
         </DescriptionEntrance>
       </div>
