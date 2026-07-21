@@ -807,13 +807,31 @@ a { color: inherit; text-decoration: none; }
   .deliver { height: auto; min-height: 127px; padding-bottom: 26px; }
   .hero h1 { font-size: clamp(32px, 10vw, 40px); }
   .feel { padding-top: 56px; }
-  .showcase { height: 521px; padding-top: 96px; }
+  .showcase {
+    height: 501px;
+    padding-top: 96px;
+    scroll-behavior: auto;
+    touch-action: pan-x pan-y;
+  }
   .showcase-track { padding-inline: 16px; }
-  .showcase figure { width: 340px; height: 425px; }
+  .showcase figure { width: 324px; height: 405px; }
   .work-cover { height: auto; }
   .thinking { padding-top: 72px; }
   .closing-inner h2 { font-size: 32px; }
   .site-footer { height: auto; min-height: 72px; align-items: flex-start; gap: 24px; padding-block: 20px; }
+}
+
+@supports (-moz-appearance: none) {
+  .project-viewport-blur .gradual-blur-inner > div {
+    display: none;
+  }
+  .project-viewport-blur .gradual-blur-inner > div:last-child {
+    display: block;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, .35) 35%, #000 100%) !important;
+    mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, .35) 35%, #000 100%) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    backdrop-filter: blur(10px) !important;
+  }
 }
 
 @media (max-width: 430px) {

@@ -323,6 +323,7 @@ function Feel() {
 
 function Showcase() {
   const viewportRef = useRef(null);
+  const usesNativeMobileScroll = () => window.matchMedia('(max-width: 640px)').matches;
   const dragRef = useRef({
     active: false,
     startX: 0,
@@ -409,6 +410,7 @@ function Showcase() {
   }, []);
 
   const startDrag = (event) => {
+    if (usesNativeMobileScroll()) return;
     const viewport = viewportRef.current;
     const drag = dragRef.current;
     cancelAnimationFrame(drag.frame);
@@ -460,6 +462,7 @@ function Showcase() {
   };
 
   const moveDrag = (event) => {
+    if (usesNativeMobileScroll()) return;
     const drag = dragRef.current;
     if (!drag.active) return;
     const now = performance.now();
@@ -476,6 +479,7 @@ function Showcase() {
     scheduleDrag();
   };
   const endDrag = (event) => {
+    if (usesNativeMobileScroll()) return;
     const viewport = viewportRef.current;
     const drag = dragRef.current;
     if (!drag.active) return;
