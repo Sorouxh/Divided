@@ -381,6 +381,33 @@ function Showcase() {
     };
   }, []);
 
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return undefined;
+
+    let warmedImages = [];
+    const warmCarousel = () => {
+      if (warmedImages.length) return;
+      warmedImages = previews.map(({ src }) => {
+        const image = new Image();
+        image.decoding = 'async';
+        image.src = src;
+        return image;
+      });
+    };
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      warmCarousel();
+      observer.disconnect();
+    }, { rootMargin: '1000px 0px', threshold: 0 });
+
+    observer.observe(viewport);
+    return () => {
+      observer.disconnect();
+      warmedImages = [];
+    };
+  }, []);
+
   const startDrag = (event) => {
     const viewport = viewportRef.current;
     const drag = dragRef.current;
@@ -478,7 +505,9 @@ function Showcase() {
               draggable="false"
               loading={number === 1 ? 'eager' : 'lazy'}
               decoding="async"
-              fetchPriority={number === 1 ? 'high' : 'low'}
+              fetchPriority={number === 1 ? 'high' : 'auto'}
+              width="430"
+              height="538"
             />
           </figure>
         ))}
