@@ -29,7 +29,7 @@ const savedHowIThinkWave = Object.freeze({
 const howIThinkSwirl = Object.freeze({
   shape: 'swirl', type: '4x4', colorBack: '#ffffff', colorFront: '#cfd8e0', pxSize: 3, speed: 0.55, zoom: 0.55,
 });
-const carouselImages = import.meta.glob('../assets/Images/*.png', { eager: true, query: '?url', import: 'default' });
+const carouselImages = import.meta.glob('../assets/Images/[0-9]*.png', { eager: true, query: '?url', import: 'default' });
 const numberedPreviews = Object.entries(carouselImages)
   .map(([path, src]) => {
     const match = path.match(/\/(\d+)\.png$/);
@@ -86,7 +86,7 @@ function Hero() {
     <>
       <section className="hero section-pad">
         <span className="avatar-tooltip" tabIndex="0" aria-describedby="profile-tooltip">
-          <img className="avatar" src={avatar} alt="Portrait of Soroush" />
+          <img className="avatar" src={avatar} alt="Portrait of Soroush" width="48" height="48" decoding="sync" fetchPriority="high" />
           <span className="avatar-tooltip-content" id="profile-tooltip" role="tooltip">Yeah that&apos;s me :)</span>
         </span>
         <SplitText
@@ -471,7 +471,15 @@ function Showcase() {
       <div className="showcase-track">
         {loopingPreviews.map(({ src, alt, number }, index) => (
           <figure key={`${src}-${index}`}>
-            <img src={src} alt={alt} data-carousel-image={number} draggable="false" />
+            <img
+              src={src}
+              alt={alt}
+              data-carousel-image={number}
+              draggable="false"
+              loading={number === 1 ? 'eager' : 'lazy'}
+              decoding="async"
+              fetchPriority={number === 1 ? 'high' : 'low'}
+            />
           </figure>
         ))}
       </div>

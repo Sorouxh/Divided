@@ -32,7 +32,11 @@ export default function SplitText({
 
   useEffect(() => {
     let active = true;
-    document.fonts.ready.then(() => active && setFontsLoaded(true));
+    const requiredFonts = [
+      document.fonts.load('400 40px "Geist"'),
+      document.fonts.load('500 40px "Bitter Pro"'),
+    ];
+    Promise.all(requiredFonts).then(() => active && setFontsLoaded(true));
     return () => { active = false; };
   }, []);
 
