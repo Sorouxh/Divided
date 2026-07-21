@@ -502,7 +502,7 @@ a { color: inherit; text-decoration: none; }
   line-height: 1.2;
   letter-spacing: -.04em;
 }
-.work-card { padding-top: 56px; }
+.work-card { padding-top: 26px; }
 .work-card + .work-card {
   position: relative;
   margin-top: 48px;
@@ -547,9 +547,10 @@ a { color: inherit; text-decoration: none; }
   position: relative;
   width: 100%;
   height: auto;
-  margin-top: 30px;
+  margin-top: 20px;
   overflow: visible;
   border-radius: 0;
+  cursor: pointer;
 }
 .work-cover img {
   position: static;
@@ -558,65 +559,6 @@ a { color: inherit; text-decoration: none; }
   height: auto;
   object-fit: initial;
   transform: none;
-}
-.has-custom-cursor { cursor: none !important; }
-.user-cursor-layer {
-  position: fixed;
-  z-index: 100;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-.user-cursor-arrow,
-.user-cursor-label {
-  position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  will-change: transform, opacity;
-  transition: opacity .14s ease;
-}
-.user-cursor-arrow {
-  z-index: 2;
-  margin: -2px 0 0 -2px;
-  overflow: visible;
-  transform-origin: 0 0;
-  filter: drop-shadow(0 1px 1px rgba(0,0,0,.16));
-}
-.user-cursor-label {
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  font-weight: 500;
-  letter-spacing: -.02em;
-  white-space: nowrap;
-  user-select: none;
-}
-.user-cursor-layer--project .user-cursor-label {
-  width: 32px;
-  height: 32px;
-  margin: 12px 0 0 22px;
-  padding: 0;
-  justify-content: center;
-  color: #171717;
-  background: #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, .2);
-  transform-origin: 0 50%;
-}
-.user-cursor-layer--project .user-cursor-label svg { width: 16px; height: 16px; }
-.user-cursor-layer--drag .user-cursor-label {
-  margin: -14px 0 0 -20px;
-  padding: 6px 10px;
-  color: #32404f;
-  background: #cfd8e0;
-  box-shadow: 0 3px 10px rgba(50, 64, 79, .12), 0 1px 2px rgba(50, 64, 79, .1);
-  font-size: 12px;
-  line-height: 16px;
-  transform-origin: 50% 50%;
-}
-@media (pointer: coarse) {
-  .user-cursor-layer { display: none; }
 }
 .cover-block,
 .cover-moqderate,

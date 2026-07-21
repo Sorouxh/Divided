@@ -10,7 +10,6 @@ import DecryptedText from './components/DecryptedText.jsx';
 import DitheringShader from './components/DitheringShader.jsx';
 import DirectionalUnderline from './components/DirectionalUnderline.jsx';
 import InteractiveContactButton from './components/InteractiveContactButton.jsx';
-import ProjectCursor from './components/ProjectCursor.jsx';
 
 import avatar from '../assets/Images/avatar.webp';
 import blockLogo from '../assets/Logos/Work 1/Icon.png';
@@ -476,7 +475,6 @@ function Showcase() {
           </figure>
         ))}
       </div>
-      <ProjectCursor targetRef={viewportRef} label="Drag" variant="drag" />
     </section>
   );
 }
@@ -506,7 +504,6 @@ function WorkCard({ blurId, onCoverVisibility, logo, logoAlt, title, description
       </div>
       <div className={`work-cover ${coverClass}`} ref={coverRef}>
         <img src={cover} alt={coverAlt} />
-        <ProjectCursor targetRef={coverRef} />
       </div>
       {showTags && <div className="work-tags" aria-label="Project disciplines">
         {projectTags.map((tag) => <span key={tag}>{tag}</span>)}
