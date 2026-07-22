@@ -357,9 +357,10 @@ a { color: inherit; text-decoration: none; }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 34px;
+  height: 34px;
   width: 86px;
   padding: 7px 15px;
+  border: 0;
   border-radius: 999px;
   color: #32404f;
   background: #cfd8e0;
@@ -368,8 +369,9 @@ a { color: inherit; text-decoration: none; }
   font-weight: 500;
   line-height: 16px;
   letter-spacing: -.02em;
+  cursor: pointer;
   transform: translate(calc(-50% + var(--magnet-x)), calc(-50% + var(--magnet-y))) scale(var(--magnet-scale));
-  transition: width .52s cubic-bezier(.22, 1, .36, 1), min-height .52s cubic-bezier(.22, 1, .36, 1), padding .52s cubic-bezier(.22, 1, .36, 1), background .32s ease, color .32s ease;
+  transition: transform .32s cubic-bezier(.22, 1, .36, 1), background .22s ease, color .22s ease;
 }
 .interactive-contact { overflow: hidden; isolation: isolate; }
 .contact-fill {
@@ -407,37 +409,152 @@ a { color: inherit; text-decoration: none; }
   transition: transform .5s ease, opacity .5s ease;
 }
 .contact-button-hover svg { width: 14px; height: 14px; flex: none; }
-.contact-email-state {
+.contact-card {
   position: absolute;
   inset: 0;
   z-index: 3;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-inline: 20px;
+  flex-direction: column;
+  padding: 14px 18px 18px;
   color: var(--white);
   opacity: 0;
-  transform: translateY(9px);
-  transition: opacity .28s ease, transform .52s cubic-bezier(.22, 1, .36, 1);
-  white-space: nowrap;
+  pointer-events: none;
+  transform: scale(.96);
+  transform-origin: center;
+  transition: opacity .16s ease .06s, transform .3s cubic-bezier(.34, 1.56, .64, 1) .05s;
 }
-.contact-email-state svg { width: 15px; height: 15px; flex: none; }
-.interactive-contact:hover { color: var(--white); }
-.interactive-contact:hover .contact-fill { transform: translate(-50%, -50%) scale(34); }
-.interactive-contact:hover .contact-button-label { opacity: 0; transform: translateX(28px); }
-.interactive-contact:hover .contact-button-hover { opacity: 1; transform: translateX(0); }
+.contact-card-header,
+.contact-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity .18s ease .08s, transform .28s cubic-bezier(.34, 1.56, .64, 1) .08s;
+}
+.contact-card-header {
+  min-height: 20px;
+  color: #b8c0c8;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: -.02em;
+}
+.contact-card-close,
+.contact-copy-control {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  color: #aeb8c1;
+  background: transparent;
+  cursor: pointer;
+  transition: color .2s ease, background .2s ease, transform .2s ease;
+}
+.contact-card-close svg { width: 14px; height: 14px; }
+.contact-card-close:hover,
+.contact-card-close:focus-visible {
+  color: var(--white);
+  background: transparent;
+}
+.contact-copy-control:hover,
+.contact-copy-control:focus-visible {
+  color: var(--white);
+  background: transparent;
+}
+.contact-card-header { margin-bottom: 16px; }
+.contact-card-row { min-height: 40px; }
+.contact-card-row + .contact-card-row { margin-top: 6px; }
+.contact-card-copy { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.contact-card-eyebrow {
+  color: #7d8894;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 17px;
+}
+.contact-card-value {
+  color: var(--white);
+  font-size: 14px;
+  font-weight: 350;
+  line-height: 20px;
+  letter-spacing: -.3px;
+}
+.contact-copy-control {
+  position: relative;
+  align-self: flex-end;
+  margin-bottom: -3px;
+}
+.contact-copy-control svg { width: 15px; height: 15px; }
+.copy-icon { position: absolute; transition: opacity .18s ease, transform .22s cubic-bezier(.22, 1, .36, 1); }
+.copy-icon-filled { opacity: 0; transform: scale(.72); }
+.contact-copy-control:hover .copy-icon-outline,
+.contact-copy-control:focus-visible .copy-icon-outline { opacity: 0; transform: scale(.72); }
+.contact-copy-control:hover .copy-icon-filled,
+.contact-copy-control:focus-visible .copy-icon-filled { opacity: 1; transform: scale(1); }
+.contact-copy-tooltip {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 5px);
+  padding: 5px 8px;
+  border-radius: 6px;
+  color: var(--white);
+  background: #171717;
+  box-shadow: 0 6px 16px rgba(23, 23, 23, .12);
+  font-size: 11px;
+  line-height: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px) scale(.96);
+  transition: opacity .18s ease, transform .22s cubic-bezier(.22, 1, .36, 1);
+}
+.contact-copy-tooltip.is-visible { opacity: 1; transform: translateY(0) scale(1); }
+.contact-instagram { color: inherit; text-decoration: none; }
+.contact-instagram > svg {
+  width: 26px;
+  height: 26px;
+  align-self: flex-end;
+  flex: none;
+  margin-bottom: -3px;
+  padding: 5px;
+  color: #aeb8c1;
+  transition: color .2s ease, transform .25s cubic-bezier(.22, 1, .36, 1);
+}
+.contact-instagram:hover > svg { color: var(--white); transform: translateX(3px); }
+.interactive-contact:not(.is-revealed):hover { color: var(--white); }
+.interactive-contact:not(.is-revealed):hover .contact-fill { transform: translate(-50%, -50%) scale(34); }
+.interactive-contact:not(.is-revealed):hover .contact-button-label { opacity: 0; transform: translateX(28px); }
+.interactive-contact:not(.is-revealed):hover .contact-button-hover { opacity: 1; transform: translateX(0); }
 .interactive-contact.is-revealed {
-  width: 242px;
-  min-height: 42px;
-  padding-inline: 20px;
+  --magnet-x: 0px !important;
+  --magnet-y: 0px !important;
+  --magnet-scale: 1 !important;
+  width: min(256px, calc(100% - 16px));
+  height: 154px;
+  padding: 0;
+  border-radius: 16px;
   color: var(--white);
   background: #32404f;
+  cursor: default;
+  transition: transform .32s cubic-bezier(.22, 1, .36, 1), background .2s ease, color .2s ease;
 }
 .interactive-contact.is-revealed .contact-fill,
 .interactive-contact.is-revealed .contact-button-label,
 .interactive-contact.is-revealed .contact-button-hover { opacity: 0; }
 .interactive-contact.is-revealed .contact-fill { transform: translate(-50%, -50%) scale(1); }
-.interactive-contact.is-revealed .contact-email-state { opacity: 1; transform: translateY(0); }
+.interactive-contact.is-revealed .contact-card {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+.interactive-contact.is-revealed .contact-card-header,
+.interactive-contact.is-revealed .contact-card-row {
+  opacity: 1;
+  transform: translateY(0);
+}
 .feel-copy {
   display: grid;
   gap: 40px;
@@ -463,7 +580,7 @@ a { color: inherit; text-decoration: none; }
   width: 100vw;
   height: 634px;
   margin-top: 0;
-  padding-top: 60px;
+  padding-top: 72px;
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
@@ -838,7 +955,7 @@ a { color: inherit; text-decoration: none; }
   .feel { padding-top: 56px; }
   .showcase {
     height: 501px;
-    padding-top: 60px;
+    padding-top: 72px;
     scroll-behavior: auto;
     touch-action: pan-x pan-y;
   }
