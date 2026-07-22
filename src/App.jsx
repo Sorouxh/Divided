@@ -29,10 +29,10 @@ const savedHowIThinkWave = Object.freeze({
 const howIThinkSwirl = Object.freeze({
   shape: 'swirl', type: '4x4', colorBack: '#ffffff', colorFront: '#cfd8e0', pxSize: 3, speed: 0.55, zoom: 0.55,
 });
-const carouselImages = import.meta.glob('../assets/Images/[0-9]*.png', { eager: true, query: '?url', import: 'default' });
+const carouselImages = import.meta.glob('../assets/Images/[0-9]*.webp', { eager: true, query: '?url', import: 'default' });
 const numberedPreviews = Object.entries(carouselImages)
   .map(([path, src]) => {
-    const match = path.match(/\/(\d+)\.png$/);
+    const match = path.match(/\/(\d+)\.webp$/);
     return match ? { src, number: Number(match[1]), alt: `Design preview ${match[1]}` } : null;
   })
   .filter(Boolean)
@@ -847,7 +847,9 @@ function ContactSection() {
       <footer className="site-footer section-pad">
         <p><strong>©2026 DividedSign,</strong> <a href="mailto:hi@dividedsign.com">hi@dividedsign.com</a></p>
         <nav aria-label="Social links">
-          <a href="https://x.com/dividedsign" target="_blank" rel="noreferrer"><DirectionalUnderline>X (Twitter)</DirectionalUnderline></a><i />
+          <a href="https://x.com/dividedsign" target="_blank" rel="noreferrer">
+            <DirectionalUnderline><span className="x-label-long">X (Twitter)</span><span className="x-label-short">X</span></DirectionalUnderline>
+          </a><i />
           <a href="https://instagram.com/dividedsign" target="_blank" rel="noreferrer"><DirectionalUnderline direction="right">Instagram</DirectionalUnderline></a><i />
           <a href="https://dribbble.com/dividedsign" target="_blank" rel="noreferrer"><DirectionalUnderline>Dribbble</DirectionalUnderline></a>
         </nav>

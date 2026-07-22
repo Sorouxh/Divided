@@ -435,7 +435,7 @@ a { color: inherit; text-decoration: none; }
   width: 100vw;
   height: 634px;
   margin-top: 0;
-  padding-top: 96px;
+  padding-top: 48px;
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
@@ -552,6 +552,7 @@ a { color: inherit; text-decoration: none; }
   border-radius: 0;
   cursor: pointer;
 }
+.x-label-short { display: none; }
 .work-cover img {
   position: static;
   display: block;
@@ -809,12 +810,14 @@ a { color: inherit; text-decoration: none; }
   .feel { padding-top: 56px; }
   .showcase {
     height: 501px;
-    padding-top: 96px;
+    padding-top: 48px;
     scroll-behavior: auto;
     touch-action: pan-x pan-y;
   }
   .showcase-track { padding-inline: 16px; }
   .showcase figure { width: 324px; height: 405px; }
+  .x-label-long { display: none; }
+  .x-label-short { display: inline; }
   .work-cover { height: auto; }
   .thinking { padding-top: 72px; }
   .closing-inner h2 { font-size: 32px; }
