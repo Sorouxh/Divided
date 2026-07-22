@@ -358,6 +358,7 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   gap: 6px;
   min-height: 34px;
+  width: 86px;
   padding: 7px 15px;
   border-radius: 999px;
   color: #32404f;
@@ -368,7 +369,7 @@ a { color: inherit; text-decoration: none; }
   line-height: 16px;
   letter-spacing: -.02em;
   transform: translate(calc(-50% + var(--magnet-x)), calc(-50% + var(--magnet-y))) scale(var(--magnet-scale));
-  transition: background .25s ease, color .25s ease;
+  transition: width .52s cubic-bezier(.22, 1, .36, 1), min-height .52s cubic-bezier(.22, 1, .36, 1), padding .52s cubic-bezier(.22, 1, .36, 1), background .32s ease, color .32s ease;
 }
 .interactive-contact { overflow: hidden; isolation: isolate; }
 .contact-fill {
@@ -406,10 +407,37 @@ a { color: inherit; text-decoration: none; }
   transition: transform .5s ease, opacity .5s ease;
 }
 .contact-button-hover svg { width: 14px; height: 14px; flex: none; }
+.contact-email-state {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: 20px;
+  color: var(--white);
+  opacity: 0;
+  transform: translateY(9px);
+  transition: opacity .28s ease, transform .52s cubic-bezier(.22, 1, .36, 1);
+  white-space: nowrap;
+}
+.contact-email-state svg { width: 15px; height: 15px; flex: none; }
 .interactive-contact:hover { color: var(--white); }
 .interactive-contact:hover .contact-fill { transform: translate(-50%, -50%) scale(34); }
 .interactive-contact:hover .contact-button-label { opacity: 0; transform: translateX(28px); }
 .interactive-contact:hover .contact-button-hover { opacity: 1; transform: translateX(0); }
+.interactive-contact.is-revealed {
+  width: 242px;
+  min-height: 42px;
+  padding-inline: 20px;
+  color: var(--white);
+  background: #32404f;
+}
+.interactive-contact.is-revealed .contact-fill,
+.interactive-contact.is-revealed .contact-button-label,
+.interactive-contact.is-revealed .contact-button-hover { opacity: 0; }
+.interactive-contact.is-revealed .contact-fill { transform: translate(-50%, -50%) scale(1); }
+.interactive-contact.is-revealed .contact-email-state { opacity: 1; transform: translateY(0); }
 .feel-copy {
   display: grid;
   gap: 40px;
@@ -435,7 +463,7 @@ a { color: inherit; text-decoration: none; }
   width: 100vw;
   height: 634px;
   margin-top: 0;
-  padding-top: 48px;
+  padding-top: 60px;
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
@@ -810,7 +838,7 @@ a { color: inherit; text-decoration: none; }
   .feel { padding-top: 56px; }
   .showcase {
     height: 501px;
-    padding-top: 48px;
+    padding-top: 60px;
     scroll-behavior: auto;
     touch-action: pan-x pan-y;
   }
