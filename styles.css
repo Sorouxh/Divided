@@ -349,7 +349,6 @@ a { color: inherit; text-decoration: none; }
 .contact-pill {
   --magnet-x: 0px;
   --magnet-y: 0px;
-  --magnet-scale: 1;
   position: absolute;
   top: 50%;
   left: 50%;
@@ -370,8 +369,8 @@ a { color: inherit; text-decoration: none; }
   line-height: 16px;
   letter-spacing: -.02em;
   cursor: pointer;
-  transform: translate(calc(-50% + var(--magnet-x)), calc(-50% + var(--magnet-y))) scale(var(--magnet-scale));
-  transition: transform .32s cubic-bezier(.22, 1, .36, 1), background .22s ease, color .22s ease;
+  transform: translate(calc(-50% + var(--magnet-x)), calc(-50% + var(--magnet-y)));
+  transition: background .22s ease, color .22s ease;
 }
 .interactive-contact { overflow: hidden; isolation: isolate; }
 .contact-fill {
@@ -467,10 +466,13 @@ a { color: inherit; text-decoration: none; }
   background: transparent;
 }
 .contact-card-header { margin-bottom: 16px; }
-.contact-card-row { min-height: 40px; }
+.contact-card-row { min-height: 40px; translate: 0 2px; }
 .contact-card-row + .contact-card-row { margin-top: 6px; }
 .contact-card-copy { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
 .contact-card-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
   color: #7d8894;
   font-size: 12px;
   font-weight: 400;
@@ -483,6 +485,19 @@ a { color: inherit; text-decoration: none; }
   line-height: 20px;
   letter-spacing: -.3px;
 }
+.contact-email-value.is-shimmering {
+  color: transparent;
+  background-image: linear-gradient(110deg, #d0d3d7 0%, #d0d3d7 35%, #ffffff 50%, #d0d3d7 65%, #d0d3d7 100%);
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: contact-email-shimmer .44s ease-out both;
+}
+@keyframes contact-email-shimmer {
+  from { background-position: 150% center; }
+  to { background-position: -50% center; }
+}
 .contact-copy-control {
   position: relative;
   align-self: flex-end;
@@ -491,28 +506,12 @@ a { color: inherit; text-decoration: none; }
 .contact-copy-control svg { width: 15px; height: 15px; }
 .copy-icon { position: absolute; transition: opacity .18s ease, transform .22s cubic-bezier(.22, 1, .36, 1); }
 .copy-icon-filled { opacity: 0; transform: scale(.72); }
+.copy-icon-check { opacity: 1; transform: scale(1); }
 .contact-copy-control:hover .copy-icon-outline,
 .contact-copy-control:focus-visible .copy-icon-outline { opacity: 0; transform: scale(.72); }
 .contact-copy-control:hover .copy-icon-filled,
 .contact-copy-control:focus-visible .copy-icon-filled { opacity: 1; transform: scale(1); }
-.contact-copy-tooltip {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 5px);
-  padding: 5px 8px;
-  border-radius: 6px;
-  color: var(--white);
-  background: #171717;
-  box-shadow: 0 6px 16px rgba(23, 23, 23, .12);
-  font-size: 11px;
-  line-height: 14px;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(4px) scale(.96);
-  transition: opacity .18s ease, transform .22s cubic-bezier(.22, 1, .36, 1);
-}
-.contact-copy-tooltip.is-visible { opacity: 1; transform: translateY(0) scale(1); }
-.contact-instagram { color: inherit; text-decoration: none; }
+.contact-instagram { color: inherit; text-decoration: none; translate: 0 4px; }
 .contact-instagram > svg {
   width: 26px;
   height: 26px;
@@ -531,15 +530,14 @@ a { color: inherit; text-decoration: none; }
 .interactive-contact.is-revealed {
   --magnet-x: 0px !important;
   --magnet-y: 0px !important;
-  --magnet-scale: 1 !important;
   width: min(256px, calc(100% - 16px));
-  height: 154px;
+  height: 158px;
   padding: 0;
   border-radius: 16px;
   color: var(--white);
   background: #32404f;
   cursor: default;
-  transition: transform .32s cubic-bezier(.22, 1, .36, 1), background .2s ease, color .2s ease;
+  transition: background .2s ease, color .2s ease;
 }
 .interactive-contact.is-revealed .contact-fill,
 .interactive-contact.is-revealed .contact-button-label,
@@ -873,8 +871,11 @@ a { color: inherit; text-decoration: none; }
 .closing-cta:hover { background: #10b57e; transform: translateY(-1px); }
 .closing-cta span { font-size: 20px; line-height: 1; }
 .closing-buffer { height: 64px; }
-.project-viewport-blur { transition: opacity .5s cubic-bezier(.22, 1, .36, 1); }
-.project-viewport-blur.is-active { transition-duration: .12s; }
+.project-viewport-blur {
+  max-width: 100vw;
+  transition: opacity .5s cubic-bezier(.22, 1, .36, 1);
+}
+.project-viewport-blur.is-active { transition-duration: 0s; }
 .site-footer {
   height: 72px;
   display: flex;

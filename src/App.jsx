@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import SplitText from './components/SplitText.jsx';
 import ScrollReveal from './components/ScrollReveal.jsx';
@@ -138,7 +138,6 @@ function MagneticField() {
     const active = [50, 64, 79];
     const pointer = { x: 159, y: 113.5 };
     const orb = { ...pointer };
-    const magnet = { x: 0, y: 0, targetX: 0, targetY: 0, scale: 1, targetScale: 1 };
     let width = 592;
     let height = 227;
     let inside = false;
@@ -149,9 +148,6 @@ function MagneticField() {
       const point = home();
       pointer.x = point.x;
       pointer.y = point.y;
-      magnet.targetX = 0;
-      magnet.targetY = 0;
-      magnet.targetScale = 1;
     };
     const resize = () => {
       const bounds = card.getBoundingClientRect();
@@ -169,14 +165,10 @@ function MagneticField() {
     };
     const onPointerMove = (event) => {
       const bounds = card.getBoundingClientRect();
-      const point = home();
       const halfWidth = contact.offsetWidth / 2;
       const halfHeight = contact.offsetHeight / 2;
       pointer.x = Math.max(halfWidth + 8, Math.min(width - halfWidth - 8, event.clientX - bounds.left));
       pointer.y = Math.max(halfHeight + 8, Math.min(height - halfHeight - 8, event.clientY - bounds.top));
-      magnet.targetX = pointer.x - point.x;
-      magnet.targetY = pointer.y - point.y;
-      magnet.targetScale = 1.035;
       inside = true;
     };
     const onPointerLeave = () => {
@@ -188,12 +180,6 @@ function MagneticField() {
       const ease = reducedMotion.matches ? 1 : 0.12;
       orb.x += (pointer.x - orb.x) * ease;
       orb.y += (pointer.y - orb.y) * ease;
-      magnet.x += (magnet.targetX - magnet.x) * ease;
-      magnet.y += (magnet.targetY - magnet.y) * ease;
-      magnet.scale += (magnet.targetScale - magnet.scale) * ease;
-      contact.style.setProperty('--magnet-x', `${magnet.x}px`);
-      contact.style.setProperty('--magnet-y', `${magnet.y}px`);
-      contact.style.setProperty('--magnet-scale', magnet.scale.toFixed(3));
       context.clearRect(0, 0, width, height);
       context.lineWidth = 1;
       context.lineCap = 'round';
@@ -238,8 +224,8 @@ function MagneticField() {
     const contact = contactRef.current;
     if (!card || !contact || !matchMedia('(pointer: fine)').matches) return undefined;
 
-    const current = { x: 0, y: 0, scale: 1 };
-    const target = { x: 0, y: 0, scale: 1 };
+    const current = { x: 0, y: 0 };
+    const target = { x: 0, y: 0 };
     const radius = 150;
     const maxPull = 9;
     let frameId = 0;
@@ -253,20 +239,19 @@ function MagneticField() {
       const pull = distance > 0 ? Math.min(maxPull, distance * .24 * influence) / distance : 0;
       target.x = dx * pull;
       target.y = dy * pull;
-      target.scale = 1 + influence * .015;
     };
     const reset = () => {
       target.x = 0;
       target.y = 0;
-      target.scale = 1;
     };
     const animate = () => {
       current.x += (target.x - current.x) * .16;
       current.y += (target.y - current.y) * .16;
-      current.scale += (target.scale - current.scale) * .16;
-      contact.style.setProperty('--magnet-x', `${current.x.toFixed(2)}px`);
-      contact.style.setProperty('--magnet-y', `${current.y.toFixed(2)}px`);
-      contact.style.setProperty('--magnet-scale', current.scale.toFixed(3));
+      const pixelRatio = devicePixelRatio || 1;
+      const snappedX = Math.round(current.x * pixelRatio) / pixelRatio;
+      const snappedY = Math.round(current.y * pixelRatio) / pixelRatio;
+      contact.style.setProperty('--magnet-x', `${snappedX}px`);
+      contact.style.setProperty('--magnet-y', `${snappedY}px`);
       frameId = requestAnimationFrame(animate);
     };
 
@@ -527,8 +512,8 @@ function WorkCard({ blurId, onCoverVisibility, logo, logoAlt, title, description
     const coverElement = coverRef.current;
     if (!coverElement) return undefined;
     const observer = new IntersectionObserver(([entry]) => {
-      onCoverVisibility(blurId, entry.isIntersecting);
-    }, { threshold: 0, rootMargin: '96px 0px 96px 0px' });
+      onCoverVisibility(blurId, entry.isIntersecting, coverElement);
+    }, { threshold: 0, rootMargin: '0px' });
     observer.observe(coverElement);
     return () => {
       observer.disconnect();
@@ -555,14 +540,68 @@ function WorkCard({ blurId, onCoverVisibility, logo, logoAlt, title, description
 
 function SelectedWorks() {
   const [activeCover, setActiveCover] = useState(null);
-  const visibleCoversRef = useRef(new Set());
+  const [blurBounds, setBlurBounds] = useState(null);
+  const visibleCoversRef = useRef(new Map());
 
-  const handleCoverVisibility = useCallback((coverId, visible) => {
-    if (visible) visibleCoversRef.current.add(coverId);
+  const handleCoverVisibility = useCallback((coverId, visible, coverElement) => {
+    if (visible) visibleCoversRef.current.set(coverId, coverElement);
     else visibleCoversRef.current.delete(coverId);
-    const visibleCovers = [...visibleCoversRef.current];
+    const visibleCovers = [...visibleCoversRef.current.keys()];
     setActiveCover(visibleCovers[visibleCovers.length - 1] ?? null);
   }, []);
+
+  useLayoutEffect(() => {
+    if (!activeCover) {
+      setBlurBounds(null);
+      return undefined;
+    }
+
+    let frameId = 0;
+    const updateBounds = () => {
+      frameId = 0;
+      const coverElement = visibleCoversRef.current.get(activeCover);
+      if (!coverElement) {
+        setBlurBounds(null);
+        return;
+      }
+
+      const rect = coverElement.getBoundingClientRect();
+      const blurHeight = 96;
+      const top = Math.max(window.innerHeight - blurHeight, rect.top);
+      const bottom = Math.min(window.innerHeight, rect.bottom);
+      const height = Math.max(0, bottom - top);
+      const nextBounds = {
+        left: rect.left,
+        top,
+        width: rect.width,
+        height,
+      };
+
+      setBlurBounds((current) => (
+        current
+        && Math.abs(current.left - nextBounds.left) < 0.5
+        && Math.abs(current.top - nextBounds.top) < 0.5
+        && Math.abs(current.width - nextBounds.width) < 0.5
+        && Math.abs(current.height - nextBounds.height) < 0.5
+          ? current
+          : nextBounds
+      ));
+    };
+    const scheduleUpdate = () => {
+      if (!frameId) frameId = requestAnimationFrame(updateBounds);
+    };
+
+    updateBounds();
+    window.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate);
+    return () => {
+      if (frameId) cancelAnimationFrame(frameId);
+      window.removeEventListener('scroll', scheduleUpdate);
+      window.removeEventListener('resize', scheduleUpdate);
+    };
+  }, [activeCover]);
+
+  const blurVisible = Boolean(activeCover && blurBounds && blurBounds.height > 0);
 
   return (
     <section className="works">
@@ -617,8 +656,17 @@ function SelectedWorks() {
           exponential
           opacity={0.9}
           zIndex={20}
-          className={`project-viewport-blur${activeCover ? ' is-active' : ''}`}
-          style={{ opacity: activeCover ? 1 : 0 }}
+          className={`project-viewport-blur${blurVisible ? ' is-active' : ''}`}
+          style={{
+            opacity: blurVisible ? 1 : 0,
+            left: `${blurBounds?.left ?? 0}px`,
+            right: 'auto',
+            top: `${blurBounds?.top ?? window.innerHeight}px`,
+            bottom: 'auto',
+            width: `${blurBounds?.width ?? 0}px`,
+            height: `${blurBounds?.height ?? 0}px`,
+            overflow: 'hidden',
+          }}
         />,
         document.body,
       )}
