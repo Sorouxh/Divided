@@ -312,6 +312,7 @@ function Showcase() {
   const dragRef = useRef({
     active: false,
     startX: 0,
+    startY: 0,
     startScroll: 0,
     targetScroll: 0,
     lastX: 0,
@@ -320,18 +321,41 @@ function Showcase() {
     moved: false,
     frame: 0,
     pointerId: null,
+    autoEnabled: true,
+    autoFrame: 0,
+    autoLastTime: 0,
   });
+
+  const stopAutoMovement = () => {
+    const drag = dragRef.current;
+    if (!drag.autoEnabled) return;
+    drag.autoEnabled = false;
+    cancelAnimationFrame(drag.autoFrame);
+    drag.autoFrame = 0;
+    const viewport = viewportRef.current;
+    const track = viewport?.querySelector('.showcase-track');
+    if (track) track.style.transform = '';
+    if (viewport) {
+      const settledPosition = Math.round(drag.targetScroll);
+      viewport.scrollLeft = settledPosition;
+      drag.targetScroll = settledPosition;
+      drag.startScroll = settledPosition;
+    }
+  };
+
   useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return undefined;
     const drag = dragRef.current;
+    const track = viewport.querySelector('.showcase-track');
     const getSetWidth = () => viewport.scrollWidth / 3;
+    let autoPosition = viewport.scrollLeft;
     const centerFirstImage = () => {
-      const track = viewport.querySelector('.showcase-track');
       const centeredItem = track?.children[previews.length + carouselCenterIndex];
       if (!centeredItem) return;
       const centeredScroll = centeredItem.offsetLeft - (viewport.clientWidth - centeredItem.offsetWidth) / 2;
       viewport.scrollLeft = centeredScroll;
+      autoPosition = centeredScroll;
       drag.targetScroll = centeredScroll;
       drag.startScroll = centeredScroll;
     };
@@ -343,6 +367,7 @@ function Showcase() {
       if (viewport.scrollLeft > setWidth * 1.75) shift = -setWidth;
       if (shift) {
         viewport.scrollLeft += shift;
+        autoPosition += shift;
         drag.targetScroll += shift;
         drag.startScroll += shift;
       } else if (!drag.active && !drag.frame) {
@@ -351,6 +376,31 @@ function Showcase() {
     };
     let lastViewportWidth = viewport.clientWidth;
     const centerFrame = requestAnimationFrame(centerFirstImage);
+
+    const moveAutomatically = (time) => {
+      if (!drag.autoEnabled) return;
+      if (!drag.autoLastTime) drag.autoLastTime = time;
+      const elapsed = Math.min(time - drag.autoLastTime, 40);
+      drag.autoLastTime = time;
+
+      if (!document.hidden && !drag.active && !drag.frame) {
+        const movement = elapsed * 0.024;
+        autoPosition += movement;
+        const wholePosition = Math.floor(autoPosition);
+        const subpixelOffset = autoPosition - wholePosition;
+        viewport.scrollLeft = wholePosition;
+        if (track) track.style.transform = `translate3d(${-subpixelOffset}px, 0, 0)`;
+        drag.targetScroll = autoPosition;
+        drag.startScroll = autoPosition;
+      }
+
+      drag.autoFrame = requestAnimationFrame(moveAutomatically);
+    };
+
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      drag.autoFrame = requestAnimationFrame(moveAutomatically);
+    }
+
     viewport.addEventListener('scroll', wrap, { passive: true });
     const resizeObserver = new ResizeObserver(() => {
       const nextViewportWidth = viewport.clientWidth;
@@ -362,6 +412,8 @@ function Showcase() {
     return () => {
       cancelAnimationFrame(centerFrame);
       cancelAnimationFrame(drag.frame);
+      cancelAnimationFrame(drag.autoFrame);
+      if (track) track.style.transform = '';
       viewport.removeEventListener('scroll', wrap);
       resizeObserver.disconnect();
     };
@@ -395,14 +447,15 @@ function Showcase() {
   }, []);
 
   const startDrag = (event) => {
+    const drag = dragRef.current;
+    drag.startX = drag.lastX = event.clientX;
+    drag.startY = event.clientY;
+    drag.moved = false;
     if (usesNativeMobileScroll()) return;
     const viewport = viewportRef.current;
-    const drag = dragRef.current;
     cancelAnimationFrame(drag.frame);
     drag.frame = 0;
     drag.active = true;
-    drag.moved = false;
-    drag.startX = drag.lastX = event.clientX;
     drag.startScroll = drag.targetScroll = viewport.scrollLeft;
     drag.lastTime = performance.now();
     drag.velocity = 0;
@@ -447,13 +500,22 @@ function Showcase() {
   };
 
   const moveDrag = (event) => {
-    if (usesNativeMobileScroll()) return;
     const drag = dragRef.current;
+    if (usesNativeMobileScroll()) {
+      const horizontalDistance = Math.abs(event.clientX - drag.startX);
+      const verticalDistance = Math.abs(event.clientY - drag.startY);
+      if (!drag.moved && horizontalDistance > 6 && horizontalDistance > verticalDistance) {
+        drag.moved = true;
+        stopAutoMovement();
+      }
+      return;
+    }
     if (!drag.active) return;
     const now = performance.now();
     const delta = event.clientX - drag.startX;
     if (!drag.moved && Math.abs(delta) > 5) {
       drag.moved = true;
+      stopAutoMovement();
       viewportRef.current?.setPointerCapture?.(event.pointerId);
     }
     drag.targetScroll = drag.startScroll - delta;
@@ -462,6 +524,12 @@ function Showcase() {
     drag.lastX = event.clientX;
     drag.lastTime = now;
     scheduleDrag();
+  };
+
+  const handleCarouselWheel = (event) => {
+    if (event.shiftKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+      stopAutoMovement();
+    }
   };
   const endDrag = (event) => {
     if (usesNativeMobileScroll()) return;
@@ -483,6 +551,7 @@ function Showcase() {
       onPointerMove={moveDrag}
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
+      onWheel={handleCarouselWheel}
     >
       <div className="showcase-track">
         {loopingPreviews.map(({ src, alt, number }, index) => (

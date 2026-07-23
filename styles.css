@@ -617,6 +617,7 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   width: max-content;
   gap: 8px;
+  will-change: transform;
 }
 .showcase figure {
   width: 430px;
