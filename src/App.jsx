@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import SplitText from './components/SplitText.jsx';
 import ScrollReveal from './components/ScrollReveal.jsx';
 import AnimatedContent from './components/AnimatedContent.jsx';
 import FadeContent from './components/FadeContent.jsx';
-import GradualBlur from './components/GradualBlur.jsx';
+import GradualBlur from 'gradualblur';
 import ShinyText from './components/ShinyText.jsx';
 import DecryptedText from './components/DecryptedText.jsx';
 import DitheringShader from './components/DitheringShader.jsx';
@@ -505,22 +505,7 @@ function Showcase() {
   );
 }
 
-function WorkCard({ blurId, onCoverVisibility, logo, logoAlt, title, description, cover, coverAlt, coverClass, featured = false, showTags = true }) {
-  const coverRef = useRef(null);
-
-  useEffect(() => {
-    const coverElement = coverRef.current;
-    if (!coverElement) return undefined;
-    const observer = new IntersectionObserver(([entry]) => {
-      onCoverVisibility(blurId, entry.isIntersecting, coverElement);
-    }, { threshold: 0, rootMargin: '0px' });
-    observer.observe(coverElement);
-    return () => {
-      observer.disconnect();
-      onCoverVisibility(blurId, false);
-    };
-  }, [blurId, onCoverVisibility]);
-
+function WorkCard({ logo, logoAlt, title, description, cover, coverAlt, coverClass, featured = false, showTags = true }) {
   return (
     <article className={`work-card${featured ? ' featured-work' : ''}`}>
       <DescriptionEntrance className="work-logo-motion"><img className="work-logo" src={logo} alt={logoAlt} /></DescriptionEntrance>
@@ -528,7 +513,7 @@ function WorkCard({ blurId, onCoverVisibility, logo, logoAlt, title, description
         <DescriptionEntrance className="work-title-motion"><h3>{title}</h3></DescriptionEntrance>
         <DescriptionEntrance><p className="project-description">{description}</p></DescriptionEntrance>
       </div>
-      <div className={`work-cover ${coverClass}`} ref={coverRef}>
+      <div className={`work-cover ${coverClass}`}>
         <img src={cover} alt={coverAlt} />
       </div>
       {showTags && <div className="work-tags" aria-label="Project disciplines">
@@ -539,70 +524,6 @@ function WorkCard({ blurId, onCoverVisibility, logo, logoAlt, title, description
 }
 
 function SelectedWorks() {
-  const [activeCover, setActiveCover] = useState(null);
-  const [blurBounds, setBlurBounds] = useState(null);
-  const visibleCoversRef = useRef(new Map());
-
-  const handleCoverVisibility = useCallback((coverId, visible, coverElement) => {
-    if (visible) visibleCoversRef.current.set(coverId, coverElement);
-    else visibleCoversRef.current.delete(coverId);
-    const visibleCovers = [...visibleCoversRef.current.keys()];
-    setActiveCover(visibleCovers[visibleCovers.length - 1] ?? null);
-  }, []);
-
-  useLayoutEffect(() => {
-    if (!activeCover) {
-      setBlurBounds(null);
-      return undefined;
-    }
-
-    let frameId = 0;
-    const updateBounds = () => {
-      frameId = 0;
-      const coverElement = visibleCoversRef.current.get(activeCover);
-      if (!coverElement) {
-        setBlurBounds(null);
-        return;
-      }
-
-      const rect = coverElement.getBoundingClientRect();
-      const blurHeight = 96;
-      const top = Math.max(window.innerHeight - blurHeight, rect.top);
-      const bottom = Math.min(window.innerHeight, rect.bottom);
-      const height = Math.max(0, bottom - top);
-      const nextBounds = {
-        left: rect.left,
-        top,
-        width: rect.width,
-        height,
-      };
-
-      setBlurBounds((current) => (
-        current
-        && Math.abs(current.left - nextBounds.left) < 0.5
-        && Math.abs(current.top - nextBounds.top) < 0.5
-        && Math.abs(current.width - nextBounds.width) < 0.5
-        && Math.abs(current.height - nextBounds.height) < 0.5
-          ? current
-          : nextBounds
-      ));
-    };
-    const scheduleUpdate = () => {
-      if (!frameId) frameId = requestAnimationFrame(updateBounds);
-    };
-
-    updateBounds();
-    window.addEventListener('scroll', scheduleUpdate, { passive: true });
-    window.addEventListener('resize', scheduleUpdate);
-    return () => {
-      if (frameId) cancelAnimationFrame(frameId);
-      window.removeEventListener('scroll', scheduleUpdate);
-      window.removeEventListener('resize', scheduleUpdate);
-    };
-  }, [activeCover]);
-
-  const blurVisible = Boolean(activeCover && blurBounds && blurBounds.height > 0);
-
   return (
     <section className="works">
       <ConstructionBand className="works-band" />
@@ -610,8 +531,6 @@ function SelectedWorks() {
         <WorkCard
           featured
           showTags={false}
-          blurId="block"
-          onCoverVisibility={handleCoverVisibility}
           logo={blockLogo}
           logoAlt="O’Block logo"
           title={<><span>O’Block</span><span className="featured-title-muted"> — Minimal Block Game</span></>}
@@ -622,8 +541,6 @@ function SelectedWorks() {
         />
         <WorkCard
           showTags={false}
-          blurId="moqderate"
-          onCoverVisibility={handleCoverVisibility}
           logo={moqderateLogo}
           logoAlt="Mooderate logo"
           title={<><span>Mooderate</span><span className="featured-title-muted"> — Moodboard space</span></>}
@@ -634,8 +551,6 @@ function SelectedWorks() {
         />
         <WorkCard
           showTags={false}
-          blurId="piqo"
-          onCoverVisibility={handleCoverVisibility}
           logo={piqoLogo}
           logoAlt="Piqo Design logo"
           title={<><span>Piqo Design</span><span className="featured-title-muted"> — Digital product design</span></>}
@@ -645,32 +560,51 @@ function SelectedWorks() {
           coverClass="cover-piqo"
         />
       </div>
-      {createPortal(
-        <GradualBlur
-          target="page"
-          position="bottom"
-          height="6rem"
-          strength={2}
-          divCount={5}
-          curve="bezier"
-          exponential
-          opacity={0.9}
-          zIndex={20}
-          className={`project-viewport-blur${blurVisible ? ' is-active' : ''}`}
-          style={{
-            opacity: blurVisible ? 1 : 0,
-            left: `${blurBounds?.left ?? 0}px`,
-            right: 'auto',
-            top: `${blurBounds?.top ?? window.innerHeight}px`,
-            bottom: 'auto',
-            width: `${blurBounds?.width ?? 0}px`,
-            height: `${blurBounds?.height ?? 0}px`,
-            overflow: 'hidden',
-          }}
-        />,
-        document.body,
-      )}
     </section>
+  );
+}
+
+function ProjectSectionBlur() {
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    const projectSection = document.querySelector('.works');
+    if (!projectSection) return undefined;
+
+    const blurHeight = 96;
+    const updateVisibility = () => {
+      const rect = projectSection.getBoundingClientRect();
+      const blurBandTop = window.innerHeight - blurHeight;
+      const overlapsBlurBand = rect.top < window.innerHeight && rect.bottom > blurBandTop;
+      setIsActive((current) => (current === overlapsBlurBand ? current : overlapsBlurBand));
+    };
+
+    updateVisibility();
+    window.addEventListener('scroll', updateVisibility, { passive: true });
+    window.addEventListener('resize', updateVisibility);
+    return () => {
+      window.removeEventListener('scroll', updateVisibility);
+      window.removeEventListener('resize', updateVisibility);
+    };
+  }, []);
+
+  return createPortal(
+    <GradualBlur
+      target="page"
+      position="bottom"
+      height="6rem"
+      strength={2}
+      divCount={5}
+      curve="bezier"
+      exponential
+      opacity={1}
+      className={`project-viewport-blur${isActive ? ' is-active' : ''}`}
+      style={{
+        opacity: isActive ? 1 : 0,
+        transition: 'opacity 120ms ease-out',
+      }}
+    />,
+    document.body,
   );
 }
 
@@ -909,26 +843,29 @@ function ContactSection() {
 
 export default function App() {
   return (
-    <main className="page-rail">
-      <header className="date-row">
-        <DecryptedText
-          text={getSystemDate()}
-          speed={32}
-          sequential
-          revealDirection="start"
-          animateOn="inViewHover"
-          characters="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,"
-          parentClassName="date-decrypt"
-          encryptedClassName="date-encrypted"
-        />
-      </header>
-      <ConstructionBand />
-      <Hero />
-      <Feel />
-      <Showcase />
-      <SelectedWorks />
-      <Thinking />
-      <ContactSection />
-    </main>
+    <>
+      <main className="page-rail">
+        <header className="date-row">
+          <DecryptedText
+            text={getSystemDate()}
+            speed={32}
+            sequential
+            revealDirection="start"
+            animateOn="inViewHover"
+            characters="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,"
+            parentClassName="date-decrypt"
+            encryptedClassName="date-encrypted"
+          />
+        </header>
+        <ConstructionBand />
+        <Hero />
+        <Feel />
+        <Showcase />
+        <SelectedWorks />
+        <Thinking />
+        <ContactSection />
+      </main>
+      <ProjectSectionBlur />
+    </>
   );
 }

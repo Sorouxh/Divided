@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 
 const InteractiveContactButton = forwardRef(function InteractiveContactButton({ children = 'Contact' }, ref) {
@@ -8,22 +8,38 @@ const InteractiveContactButton = forwardRef(function InteractiveContactButton({ 
   const copiedTimer = useRef(null);
   const shimmerTimer = useRef(null);
   const shimmerFrame = useRef(null);
+  const contactRootRef = useRef(null);
   const email = 'hi@dividedsign.com';
 
-  const clearTimers = () => {
+  const setContactRef = useCallback((node) => {
+    contactRootRef.current = node;
+    if (typeof ref === 'function') ref(node);
+    else if (ref) ref.current = node;
+  }, [ref]);
+
+  const clearTimers = useCallback(() => {
     window.clearTimeout(copiedTimer.current);
     window.clearTimeout(shimmerTimer.current);
     window.cancelAnimationFrame(shimmerFrame.current);
-  };
+  }, []);
 
-  useEffect(() => clearTimers, []);
+  useEffect(() => clearTimers, [clearTimers]);
 
-  const closeCard = () => {
+  const closeCard = useCallback(() => {
     clearTimers();
     setIsCopied(false);
     setIsShimmering(false);
     setIsRevealed(false);
-  };
+  }, [clearTimers]);
+
+  useEffect(() => {
+    if (!isRevealed) return undefined;
+    const handleOutsidePointerDown = (event) => {
+      if (!contactRootRef.current?.contains(event.target)) closeCard();
+    };
+    document.addEventListener('pointerdown', handleOutsidePointerDown);
+    return () => document.removeEventListener('pointerdown', handleOutsidePointerDown);
+  }, [closeCard, isRevealed]);
 
   const revealCard = () => {
     setIsCopied(false);
@@ -56,7 +72,7 @@ const InteractiveContactButton = forwardRef(function InteractiveContactButton({ 
 
   return (
     <motion.div
-      ref={ref}
+      ref={setContactRef}
       className={`contact-pill interactive-contact${isRevealed ? ' is-revealed' : ''}`}
       animate={isRevealed
         ? { width: 256, height: 158, borderRadius: 16 }
