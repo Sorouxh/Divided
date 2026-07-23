@@ -92,7 +92,12 @@ const InteractiveContactButton = forwardRef(function InteractiveContactButton({ 
             <span className="contact-card-eyebrow">
               Email
             </span>
-            <span className={`contact-card-value contact-email-value${isShimmering ? ' is-shimmering' : ''}`}>Hi@Dividedsign.com</span>
+            <span
+              className={`contact-card-value contact-email-value${isShimmering ? ' is-shimmering' : ''}`}
+              data-text="Hi@Dividedsign.com"
+            >
+              Hi@Dividedsign.com
+            </span>
           </div>
           <button className="contact-copy-control" type="button" onClick={copyEmail} aria-label={isCopied ? 'Email copied' : 'Copy email address'}>
             {isCopied ? (
